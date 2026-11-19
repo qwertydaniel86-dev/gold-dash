@@ -56,10 +56,11 @@ async function tick(){try{var q=await j(API),m=q.mid,now=Date.now();H.push([now,
  $('lv').innerHTML=LV.map(function(l,i){return '<div class="lv'+(i==ni?' near':'')+'"><span>'+l[0]+' '+l[1]+(i==ni?' ← nearest':'')+'</span><span class="mu">'+(l[1]-m>=0?'+':'')+f(l[1]-m)+'</span></div>'}).join('')
 pos()}catch(e){$('st').textContent='· reconnecting'}}
 
-var P=JSON.parse(localStorage.gdPos||'null');function sv(){localStorage.gdPos=JSON.stringify(P)}
-function add(d){if(prev==null)return;if(P&&P.d!==d){note('Close the '+(P.d>0?'BUY':'SELL')+' first.');return}if(!P)P={d:d,e:[]};if(P.e.length>=5){note('Max 5 entries.');return}P.e.push(prev);sv();note('Entry '+P.e.length+'/5 added at '+f(prev));pos()}
+var P=null;try{P=JSON.parse(localStorage.gdPos||'null')}catch(e){}function sv(){try{localStorage.gdPos=JSON.stringify(P)}catch(e){}}
+function add(d){if(prev==null)return;if(P&&P.d!==d)P=null;if(!P)P={d:d,e:[]};if(P.e.length>=5){note('Max 5 entries.');return}P.e.push(prev);sv();note('Entry '+P.e.length+'/5 added at '+f(prev));pos()}
 var NT=0;function note(x){var n=$('nt');n.textContent=x;clearTimeout(NT);NT=setTimeout(function(){n.textContent=''},2500)}
-$('bB').onclick=function(){add(1)};$('bS').onclick=function(){add(-1)};$('bC').onclick=function(){if(P&&confirm('Close all entries?')){P=null;sv();pos()}};
+function tap(id,fn){var el=$(id),t=0;el.addEventListener('touchend',function(e){e.preventDefault();t=Date.now();fn()},{passive:false});el.addEventListener('click',function(){if(Date.now()-t>600)fn()})}
+tap('bB',function(){add(1)});tap('bS',function(){add(-1)});tap('bC',function(){P=null;sv();note('Closed');pos()});
 function pos(){var b=$('pos'),t=$('tpx'),R=$('rev');document.body.classList.toggle('inpos',!!P);if(!P||prev==null){b.style.display='none';t.style.display='none';R.textContent='';return}
  var m=prev,n=P.e.length,avg=P.e.reduce(function(a,x){return a+x},0)/n,d=P.d,st=atr?1.5*atr:avg*0.003,
  tp1=avg+d*st,lv=LV.map(function(l){return l[1]}).filter(function(x){return d>0?x>tp1:x<tp1}).sort(function(a,c){return d>0?a-c:c-a}),tp2=lv.length?lv[0]:avg+d*2*st,sl=avg*(1-d*0.0005),pl=(m-avg)*d;
