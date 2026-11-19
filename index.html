@@ -10,11 +10,15 @@ h1{font-size:15px;color:#8b98a5;margin:14px 0 4px;font-weight:600}
 .arr-up{color:#2ecc71;animation:f .6s infinite alternate}.arr-dn{color:#ff5c5c;animation:f .6s infinite alternate}.spike{display:none;text-align:center;font-weight:800;padding:10px;border-radius:10px;margin-top:8px;animation:f .6s infinite alternate}
 @keyframes f{to{opacity:.35}}.lv{display:flex;justify-content:space-between;padding:7px 10px;border-radius:8px}
 .near{background:#24303c;font-weight:700;outline:1px solid #f5c542}canvas{width:100%;height:140px;background:#141b23;border-radius:12px;margin-top:12px}
+.btns{display:flex;gap:8px;margin-top:12px}.btns button{flex:1;border:0;border-radius:12px;padding:16px 0;font-size:18px;font-weight:800;color:#fff}
+.bb{background:#15803d}.bs{background:#b91c1c}.bc{background:#334155;flex:.7!important}.tp{display:none;text-align:center;font-size:24px;font-weight:800;padding:12px;border-radius:12px;margin-top:8px;animation:f .6s infinite alternate}
 .note{color:#8b98a5;font-size:12px;margin-top:14px;text-align:center}
 </style></head><body>
 <h1>XAU/USD · Gold <span id="st" class="mu"></span></h1>
 <p class="px"><span id="px">—</span> <span id="arr" style="font-size:44px"></span></p><div id="chg" class="mu">loading…</div>
 <div id="sig" class="badge WAIT">WAIT</div><div id="spk" class="spike"></div>
+<div class="btns"><button class="bb" id="bB">BUY</button><button class="bs" id="bS">SELL</button><button class="bc" id="bC">CLOSE</button></div>
+<div id="tpx" class="tp"></div><div class="card" id="pos" style="margin-top:8px;display:none"></div>
 <div class="row"><div class="card"><div class="mu">10-min move</div><div id="m10">—</div></div>
 <div class="card"><div class="mu">Stop (1.5×ATR14, 5m)</div><div id="atr">—</div></div></div>
 <div class="row"><div class="card"><div class="mu">Day high / low</div><div id="hl">—</div></div></div>
@@ -48,6 +52,16 @@ async function tick(){try{var q=await j(API),m=q.mid,now=Date.now();H.push([now,
  if(atr){var d=1.5*atr;$('atr').innerHTML=f(d)+'<div class="mu">long '+f(m-d)+' · short '+f(m+d)+'</div>'}
  var ni=0;LV.forEach(function(l,i){if(Math.abs(l[1]-m)<Math.abs(LV[ni][1]-m))ni=i});
  $('lv').innerHTML=LV.map(function(l,i){return '<div class="lv'+(i==ni?' near':'')+'"><span>'+l[0]+' '+l[1]+(i==ni?' ← nearest':'')+'</span><span class="mu">'+(l[1]-m>=0?'+':'')+f(l[1]-m)+'</span></div>'}).join('')
-}catch(e){$('st').textContent='· reconnecting'}}
+pos()}catch(e){$('st').textContent='· reconnecting'}}
+
+var P=JSON.parse(localStorage.gdPos||'null');function sv(){localStorage.gdPos=JSON.stringify(P)}
+function add(d){if(prev==null)return;if(P&&P.d!==d){alert('Close the '+(P.d>0?'BUY':'SELL')+' first.');return}if(!P)P={d:d,e:[]};if(P.e.length>=5){alert('Max 5 entries.');return}P.e.push(prev);sv();pos()}
+$('bB').onclick=function(){add(1)};$('bS').onclick=function(){add(-1)};$('bC').onclick=function(){if(P&&confirm('Close all entries?')){P=null;sv();pos()}};
+function pos(){var b=$('pos'),t=$('tpx');if(!P||prev==null){b.style.display='none';t.style.display='none';return}
+ var m=prev,n=P.e.length,avg=P.e.reduce(function(a,x){return a+x},0)/n,d=P.d,st=atr?1.5*atr:avg*0.003,
+ tp1=avg+d*st,lv=LV.map(function(l){return l[1]}).filter(function(x){return d>0?x>tp1:x<tp1}).sort(function(a,c){return d>0?a-c:c-a}),tp2=lv.length?lv[0]:avg+d*2*st,sl=avg-d*st,pl=(m-avg)*d;
+ var msg='',cls='';if(d*(m-tp2)>=0){msg='✅ TAKE ALL PROFIT (TP2)';cls='BUY'}else if(d*(m-tp1)>=0){msg='💰 TAKE PARTIAL PROFIT (TP1)';cls='BUY'}else if(d*(m-sl)<=0){msg='⛔ STOP HIT, EXIT';cls='SELL'}else if(pl>0&&((d>0&&$('sig').textContent==='SELL')||(d<0&&$('sig').textContent==='BUY'))){msg='⚠ SIGNAL FLIPPED, SECURE PROFIT';cls='WAIT'}
+ t.style.display=msg?'block':'none';t.className='tp '+cls;t.textContent=msg;b.style.display='block';
+ b.innerHTML='<div class="mu">'+(d>0?'BUY':'SELL')+' · '+n+'/5 entries · avg '+f(avg)+'</div><div style="font-size:22px;font-weight:700" class="'+(pl>=0?'up':'dn')+'">'+(pl>=0?'+':'')+f(pl)+' $/oz ('+(pl/avg*100).toFixed(2)+'%)</div><div class="mu">TP1 '+f(tp1)+' · TP2 '+f(tp2)+' · SL '+f(sl)+'</div><div class="mu">Entries: '+P.e.map(f).join(', ')+'</div>'}
 candles().then(tick);setInterval(tick,1500);setInterval(candles,60000);
 </script></body></html>
