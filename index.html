@@ -7,13 +7,13 @@ h1{font-size:15px;color:#8b98a5;margin:14px 0 4px;font-weight:600}
 .row{display:flex;gap:10px;margin-top:12px}.card{flex:1;background:#141b23;border-radius:12px;padding:12px}
 .badge{font-size:30px;font-weight:800;text-align:center;border-radius:12px;padding:14px;margin-top:12px}
 .BUY{background:#14532d;color:#4ade80}.SELL{background:#5f1d1d;color:#ff8080}.WAIT{background:#3b3320;color:#f5c542}
-.spike{display:none;text-align:center;font-weight:800;padding:10px;border-radius:10px;margin-top:8px;animation:f .6s infinite alternate}
+.arr-up{color:#2ecc71;animation:f .6s infinite alternate}.arr-dn{color:#ff5c5c;animation:f .6s infinite alternate}.spike{display:none;text-align:center;font-weight:800;padding:10px;border-radius:10px;margin-top:8px;animation:f .6s infinite alternate}
 @keyframes f{to{opacity:.35}}.lv{display:flex;justify-content:space-between;padding:7px 10px;border-radius:8px}
 .near{background:#24303c;font-weight:700;outline:1px solid #f5c542}canvas{width:100%;height:140px;background:#141b23;border-radius:12px;margin-top:12px}
 .note{color:#8b98a5;font-size:12px;margin-top:14px;text-align:center}
 </style></head><body>
 <h1>XAU/USD · Gold <span id="st" class="mu"></span></h1>
-<p id="px" class="px">—</p><div id="chg" class="mu">loading…</div>
+<p class="px"><span id="px">—</span> <span id="arr" style="font-size:44px"></span></p><div id="chg" class="mu">loading…</div>
 <div id="sig" class="badge WAIT">WAIT</div><div id="spk" class="spike"></div>
 <div class="row"><div class="card"><div class="mu">10-min move</div><div id="m10">—</div></div>
 <div class="card"><div class="mu">Stop (1.5×ATR14, 5m)</div><div id="atr">—</div></div></div>
@@ -37,14 +37,14 @@ function draw(){var cv=$('ch'),g=cv.getContext('2d'),W=cv.width,Hh=cv.height;g.c
  g.strokeStyle=v[v.length-1]>=v[0]?'#2ecc71':'#ff5c5c';g.lineWidth=3;g.beginPath();
  v.forEach(function(x,i){var X=i/(v.length-1)*W,Y=Hh-10-(x-mn)/r*(Hh-20);i?g.lineTo(X,Y):g.moveTo(X,Y)});g.stroke()}
 async function tick(){try{var q=await j(API),m=q.mid,now=Date.now();H.push([now,m]);while(H.length&&H[0][0]<now-900000)H.shift();
- var px=$('px');px.textContent=f(m);px.className='px '+(prev==null?(q.dayDiffPercent>=0?'up':'dn'):m>prev?'up':m<prev?'dn':(px.className.split(' ')[1]||'up'));prev=m;
+ var px=$('px');px.textContent=f(m);px.className=(prev==null?(q.dayDiffPercent>=0?'up':'dn'):m>prev?'up':m<prev?'dn':(px.className.split(' ')[1]||'up'));prev=m;
  $('chg').innerHTML='<span class="'+(q.dayDiffPercent>=0?'up':'dn')+'">'+(q.dayDiffPercent>=0?'+':'')+q.dayDiffPercent.toFixed(2)+'% today</span> · bid '+f(q.bid)+' / ask '+f(q.ask);
  $('st').textContent=q.stale||q.marketState!=='open'?'· '+(q.marketState||'stale'):'· live';
  $('hl').textContent=f(q.high)+' / '+f(q.low);
  var b10=at(600000),p10=b10?(m/b10[1]-1)*100:0,s=p10>=0.02?'BUY':p10<=-0.02?'SELL':'WAIT';
  $('sig').className='badge '+s;$('sig').textContent=s;$('m10').innerHTML='<span class="'+(p10>=0?'up':'dn')+'">'+(p10>=0?'+':'')+p10.toFixed(3)+'%</span>';
  var b2=at(120000),p2=b2?(m/b2[1]-1)*100:0,k=$('spk');
- if(Math.abs(p2)>=0.2){k.style.display='block';k.className='spike '+(p2>0?'BUY':'SELL');k.textContent=(p2>0?'SPIKE UP ':'SPIKE DOWN ')+p2.toFixed(2)+'% / 2 min'}else k.style.display='none';
+ if(Math.abs(p2)>=0.2){k.style.display='block';k.className='spike '+(p2>0?'BUY':'SELL');k.textContent=(p2>0?'▲ SPIKE UP ':'▼ SPIKE DOWN ')+p2.toFixed(2)+'% / 2 min'}else k.style.display='none';var A=$('arr');if(Math.abs(p2)>=0.2){A.textContent=p2>0?'▲':'▼';A.className=p2>0?'arr-up':'arr-dn'}else{A.textContent='';A.className=''}
  if(atr){var d=1.5*atr;$('atr').innerHTML=f(d)+'<div class="mu">long '+f(m-d)+' · short '+f(m+d)+'</div>'}
  var ni=0;LV.forEach(function(l,i){if(Math.abs(l[1]-m)<Math.abs(LV[ni][1]-m))ni=i});
  $('lv').innerHTML=LV.map(function(l,i){return '<div class="lv'+(i==ni?' near':'')+'"><span>'+l[0]+' '+l[1]+(i==ni?' ← nearest':'')+'</span><span class="mu">'+(l[1]-m>=0?'+':'')+f(l[1]-m)+'</span></div>'}).join('')
