@@ -6,7 +6,7 @@ h1{font-size:15px;color:#8b98a5;margin:14px 0 4px;font-weight:600}
 .px{font-size:54px;font-weight:700;letter-spacing:-1px;margin:0}.up{color:#2ecc71}.dn{color:#ff5c5c}.mu{color:#8b98a5;font-size:13px}
 .row{display:flex;gap:10px;margin-top:12px}.card{flex:1;background:#141b23;border-radius:12px;padding:12px}
 .badge{font-size:30px;font-weight:800;text-align:center;border-radius:12px;padding:14px;margin-top:12px}
-.BUY{background:#14532d;color:#4ade80}.SELL{background:#5f1d1d;color:#ff8080}.WAIT{background:#3b3320;color:#f5c542}
+.BUY{background:#14532d;color:#4ade80}.SELL{background:#5f1d1d;color:#ff8080}.WAIT{background:#3b3320;color:#f5c542}.str{text-align:center;font-weight:800;font-size:13px;letter-spacing:1px;margin:-4px 0 8px}.str .mu{font-weight:400;letter-spacing:0}
 .arr-up{color:#2ecc71;animation:f .6s infinite alternate}.arr-dn{color:#ff5c5c;animation:f .6s infinite alternate}.spike{display:none;text-align:center;font-weight:800;padding:10px;border-radius:10px;margin-top:8px;animation:f .6s infinite alternate}
 @keyframes f{to{opacity:.35}}.lv{display:flex;justify-content:space-between;padding:7px 10px;border-radius:8px}
 .near{background:#24303c;font-weight:700;outline:1px solid #f5c542}canvas{width:100%;height:140px;background:#141b23;border-radius:12px;margin-top:12px}
@@ -21,7 +21,7 @@ body.inpos{padding-bottom:52vh}body.inpos #trade{position:fixed;left:0;right:0;b
 </style></head><body>
 <h1>XAU/USD · Gold <span id="st" class="mu"></span></h1>
 <p class="px"><span id="px">—</span> <span id="arr" style="font-size:44px"></span></p><div id="chg" class="mu">loading…</div>
-<div id="sig" class="badge WAIT">WAIT</div><div id="spk" class="spike"></div>
+<div id="sig" class="badge WAIT">WAIT</div><div id="str" class="str"></div><div id="spk" class="spike"></div>
 <div id="trade"><div class="btns"><button class="bb" id="bB">BUY</button><button class="bs" id="bS">SELL</button><button class="bc" id="bC">CLOSE</button></div>
 <div id="nt" class="mu" style="text-align:center;min-height:18px;margin-top:6px"></div><div id="tpx" class="tp"></div><div id="pos" style="display:none"></div><div id="rev" class="mu" style="text-align:center;font-size:18px;margin-top:8px"></div></div>
 <div class="row"><div class="card"><div class="mu">10-min move</div><div id="m10">—</div></div>
@@ -51,7 +51,7 @@ async function tick(){try{var q=await j(API),m=q.mid,now=Date.now();H.push([now,
  $('st').textContent=q.stale||q.marketState!=='open'?'· '+(q.marketState||'stale'):'· live';
  $('hl').textContent=f(q.high)+' / '+f(q.low);
  var b10=at(600000),p10=b10?(m/b10[1]-1)*100:0,s=p10>=0.02?'BUY':p10<=-0.02?'SELL':'WAIT';
- $('sig').className='badge '+s;$('sig').textContent=s;$('m10').innerHTML='<span class="'+(p10>=0?'up':'dn')+'">'+(p10>=0?'+':'')+p10.toFixed(3)+'%</span>';
+ $('sig').className='badge '+s;$('sig').textContent=s;var h1=bars1.length>60?(m/bars1[bars1.length-61].close-1)*100:null,tw=h1==null?0:(s=='BUY'?(h1>0?1:-1):(h1<0?1:-1));$('str').innerHTML=s=='WAIT'?'':(Math.abs(p10)>=0.04&&tw>0?'<span class="up">💪 STRONG</span>':'<span class="WAITc">〰 WEAK</span>')+(h1==null?'':' <span class="mu">· 1h '+(h1>=0?'+':'')+h1.toFixed(2)+'%</span>');$('m10').innerHTML='<span class="'+(p10>=0?'up':'dn')+'">'+(p10>=0?'+':'')+p10.toFixed(3)+'%</span>';
  var b2=at(120000),p2=b2?(m/b2[1]-1)*100:0,k=$('spk');
  if(Math.abs(p2)>=0.2){k.style.display='block';k.className='spike '+(p2>0?'BUY':'SELL');k.textContent=(p2>0?'▲ SPIKE UP ':'▼ SPIKE DOWN ')+p2.toFixed(2)+'% / 2 min'}else k.style.display='none';var A=$('arr');if(Math.abs(p2)>=0.2){A.textContent=p2>0?'▲':'▼';A.className=p2>0?'arr-up':'arr-dn'}else{A.textContent='';A.className=''}
  if(atr){var d=1.5*atr;$('atr').innerHTML=f(d)+'<div class="mu">long '+f(m-d)+' · short '+f(m+d)+'</div>'}
