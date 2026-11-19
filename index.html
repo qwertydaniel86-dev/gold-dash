@@ -14,13 +14,16 @@ h1{font-size:15px;color:#8b98a5;margin:14px 0 4px;font-weight:600}
 .bb{background:#15803d}.bs{background:#b91c1c}.bc{background:#334155;flex:.7!important}.tp{display:none;text-align:center;font-size:24px;font-weight:800;padding:12px;border-radius:12px;margin-top:8px;animation:f .6s infinite alternate}
 body.inpos{padding-bottom:52vh}body.inpos #trade{position:fixed;left:0;right:0;bottom:0;height:50vh;overflow:auto;background:#0b0f14;border-top:2px solid #f5c542;padding:8px 14px calc(env(safe-area-inset-bottom) + 8px);box-sizing:border-box;z-index:9}
 @media (orientation:landscape){body.inpos{padding-bottom:24px;padding-right:calc(50vw + 8px)}body.inpos #trade{top:0;bottom:0;left:auto;right:0;width:50vw;height:100vh;border-top:0;border-left:2px solid #f5c542;padding:12px 14px}}
+.ent{display:flex;align-items:center;gap:8px;background:#141b23;border-radius:10px;padding:8px 10px;margin-top:6px}.el{flex:1.3;min-width:0;font-size:15px}.el .mu{font-size:11px}
+.ew{flex:1;text-align:center;font-weight:800;font-size:14px}.bl{animation:f .6s infinite alternate}.WAITc{color:#f5c542}.en{flex:.8;text-align:right;font-weight:700;font-size:18px}.en .mu{font-size:11px;font-weight:400}
+.ex{border:0;background:#334155;color:#fff;border-radius:8px;width:30px;height:30px;font-size:14px;touch-action:manipulation}
 .note{color:#8b98a5;font-size:12px;margin-top:14px;text-align:center}
 </style></head><body>
 <h1>XAU/USD · Gold <span id="st" class="mu"></span></h1>
 <p class="px"><span id="px">—</span> <span id="arr" style="font-size:44px"></span></p><div id="chg" class="mu">loading…</div>
 <div id="sig" class="badge WAIT">WAIT</div><div id="spk" class="spike"></div>
 <div id="trade"><div class="btns"><button class="bb" id="bB">BUY</button><button class="bs" id="bS">SELL</button><button class="bc" id="bC">CLOSE</button></div>
-<div id="nt" class="mu" style="text-align:center;min-height:18px;margin-top:6px"></div><div id="tpx" class="tp"></div><div class="card" id="pos" style="margin-top:8px;display:none"></div><div id="rev" class="mu" style="text-align:center;font-size:18px;margin-top:8px"></div></div>
+<div id="nt" class="mu" style="text-align:center;min-height:18px;margin-top:6px"></div><div id="tpx" class="tp"></div><div id="pos" style="display:none"></div><div id="rev" class="mu" style="text-align:center;font-size:18px;margin-top:8px"></div></div>
 <div class="row"><div class="card"><div class="mu">10-min move</div><div id="m10">—</div></div>
 <div class="card"><div class="mu">Stop (1.5×ATR14, 5m)</div><div id="atr">—</div></div></div>
 <div class="row"><div class="card"><div class="mu">Day high / low</div><div id="hl">—</div></div></div>
@@ -56,16 +59,17 @@ async function tick(){try{var q=await j(API),m=q.mid,now=Date.now();H.push([now,
  $('lv').innerHTML=LV.map(function(l,i){return '<div class="lv'+(i==ni?' near':'')+'"><span>'+l[0]+' '+l[1]+(i==ni?' ← nearest':'')+'</span><span class="mu">'+(l[1]-m>=0?'+':'')+f(l[1]-m)+'</span></div>'}).join('')
 pos()}catch(e){$('st').textContent='· reconnecting'}}
 
-var P=null;try{P=JSON.parse(localStorage.gdPos||'null')}catch(e){}function sv(){try{localStorage.gdPos=JSON.stringify(P)}catch(e){}}
-function add(d){if(prev==null)return;if(P&&P.d!==d)P=null;if(!P)P={d:d,e:[]};if(P.e.length>=5){note('Max 5 entries.');return}P.e.push(prev);sv();note('Entry '+P.e.length+'/5 added at '+f(prev));pos()}
+var E=[];try{E=JSON.parse(localStorage.gdE||'[]')||[]}catch(e){}function sv(){try{localStorage.gdE=JSON.stringify(E)}catch(e){}}
+function add(d){if(prev==null)return;if(E.length>=5){note('Max 5 entries.');return}E.push({d:d,p:prev});sv();note((d>0?'BUY':'SELL')+' #'+E.length+' at '+f(prev));pos()}
 var NT=0;function note(x){var n=$('nt');n.textContent=x;clearTimeout(NT);NT=setTimeout(function(){n.textContent=''},2500)}
-function tap(id,fn){var el=$(id),t=0;el.addEventListener('touchend',function(e){e.preventDefault();t=Date.now();fn()},{passive:false});el.addEventListener('click',function(){if(Date.now()-t>600)fn()})}
-tap('bB',function(){add(1)});tap('bS',function(){add(-1)});tap('bC',function(){P=null;sv();note('Closed');pos()});
-function pos(){var b=$('pos'),t=$('tpx'),R=$('rev');document.body.classList.toggle('inpos',!!P);if(!P||prev==null){b.style.display='none';t.style.display='none';R.textContent='';return}
- var m=prev,n=P.e.length,avg=P.e.reduce(function(a,x){return a+x},0)/n,d=P.d,st=atr?1.5*atr:avg*0.003,
- tp1=avg+d*st,lv=LV.map(function(l){return l[1]}).filter(function(x){return d>0?x>tp1:x<tp1}).sort(function(a,c){return d>0?a-c:c-a}),tp2=lv.length?lv[0]:avg+d*2*st,sl=avg*(1-d*0.0005),pl=(m-avg)*d;
- var msg='',cls='';if(d*(m-sl)<=0){msg='⛔ STOP LOSS −0.05%, EXIT';cls='SELL'}else if(d*(m-tp2)>=0){msg='✅ TAKE ALL PROFIT (TP2)';cls='BUY'}else if(d*(m-tp1)>=0){msg='💰 TAKE PARTIAL PROFIT (TP1)';cls='BUY'}else if(d*(m-sl)<=0){msg='⛔ STOP HIT, EXIT';cls='SELL'}else if(pl>0&&((d>0&&$('sig').textContent==='SELL')||(d<0&&$('sig').textContent==='BUY'))){msg='⚠ SIGNAL FLIPPED, SECURE PROFIT';cls='WAIT'}
- var b2=at(120000),mv=b2?d*(m/b2[1]-1)*100:0;R.innerHTML=mv<=-0.02?'<span class="dn">↘ Price moving AGAINST you ('+mv.toFixed(2)+'% / 2 min)</span>':mv>=0.02?'<span class="up">↗ Moving your way (+'+mv.toFixed(2)+'% / 2 min)</span>':'→ Flat';t.style.display=msg?'block':'none';t.className='tp '+cls;t.textContent=msg;b.style.display='block';
- b.innerHTML='<div class="mu">'+(d>0?'BUY':'SELL')+' · '+n+'/5 entries · avg '+f(avg)+'</div><div style="font-size:22px;font-weight:700" class="'+(pl>=0?'up':'dn')+'">'+(pl>=0?'+':'')+f(pl)+' $/oz ('+(pl/avg*100).toFixed(2)+'%)</div><div class="mu">TP1 '+f(tp1)+' · TP2 '+f(tp2)+' · SL '+f(sl)+' (−0.05%)</div><div class="mu">Entries: '+P.e.map(f).join(', ')+'</div>'}
+function tap(el,fn){var t=0;el.addEventListener('touchend',function(e){e.preventDefault();t=Date.now();fn()},{passive:false});el.addEventListener('click',function(){if(Date.now()-t>600)fn()})}
+tap($('bB'),function(){add(1)});tap($('bS'),function(){add(-1)});tap($('bC'),function(){E=[];sv();note('All closed');pos()});
+$('pos').addEventListener('click',function(e){var x=e.target.closest('[data-x]');if(x){E.splice(+x.dataset.x,1);sv();pos()}});
+function pos(){var b=$('pos'),t=$('tpx'),R=$('rev');document.body.classList.toggle('inpos',E.length>0);t.style.display='none';R.textContent='';
+ if(!E.length||prev==null){b.style.display='none';return}
+ var m=prev,st=atr?1.5*atr:m*0.003,b2=at(120000),mv2=b2?(m/b2[1]-1)*100:0;b.style.display='block';
+ b.innerHTML=E.map(function(x,i){var d=x.d,tp1=x.p+d*st,lv=LV.map(function(l){return l[1]}).filter(function(v){return d>0?v>tp1:v<tp1}).sort(function(a,c){return d>0?a-c:c-a}),tp2=lv.length?lv[0]:x.p+d*2*st,sl=x.p*(1-d*0.0005),pt=(m-x.p)*d,
+  w='',wc='mu';if(d*(m-sl)<=0){w='⛔ STOP LOSS';wc='dn'}else if(d*(m-tp2)>=0){w='✅ TAKE ALL (TP2)';wc='up'}else if(d*(m-tp1)>=0){w='💰 TAKE PROFIT (TP1)';wc='up'}else if(d*mv2<=-0.02){w='↘ AGAINST YOU';wc='dn'}else if(pt>0&&((d>0&&$('sig').textContent==='SELL')||(d<0&&$('sig').textContent==='BUY'))){w='⚠ SECURE PROFIT';wc='WAITc'}else if(d*mv2>=0.02){w='↗ YOUR WAY';wc='up'}else w='→ Flat';
+  return '<div class="ent"><div class="el"><b class="'+(d>0?'up':'dn')+'">'+(d>0?'BUY':'SELL')+' #'+(i+1)+'</b> @ '+f(x.p)+'<div class="mu">TP1 '+f(tp1)+' · TP2 '+f(tp2)+' · SL '+f(sl)+'</div></div><div class="ew '+wc+(w.charAt(0)==='→'?'':' bl')+'">'+w+'</div><div class="en '+(pt>=0?'up':'dn')+'">'+(pt>=0?'+':'')+f(pt)+'<div class="mu">'+(pt>=0?'+':'')+(pt/x.p*100).toFixed(3)+'%</div></div><button class="ex" data-x="'+i+'">✕</button></div>'}).join('')}
 candles().then(tick);setInterval(tick,1500);setInterval(candles,60000);
 </script></body></html>
