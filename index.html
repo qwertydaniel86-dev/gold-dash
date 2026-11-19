@@ -12,13 +12,14 @@ h1{font-size:15px;color:#8b98a5;margin:14px 0 4px;font-weight:600}
 .near{background:#24303c;font-weight:700;outline:1px solid #f5c542}canvas{width:100%;height:140px;background:#141b23;border-radius:12px;margin-top:12px}
 .btns{display:flex;gap:8px;margin-top:12px}.btns button{flex:1;border:0;border-radius:12px;padding:16px 0;font-size:18px;font-weight:800;color:#fff}
 .bb{background:#15803d}.bs{background:#b91c1c}.bc{background:#334155;flex:.7!important}.tp{display:none;text-align:center;font-size:24px;font-weight:800;padding:12px;border-radius:12px;margin-top:8px;animation:f .6s infinite alternate}
+body.inpos{padding-bottom:52vh}body.inpos #trade{position:fixed;left:0;right:0;bottom:0;height:50vh;overflow:auto;background:#0b0f14;border-top:2px solid #f5c542;padding:8px 14px calc(env(safe-area-inset-bottom) + 8px);box-sizing:border-box;z-index:9}
 .note{color:#8b98a5;font-size:12px;margin-top:14px;text-align:center}
 </style></head><body>
 <h1>XAU/USD · Gold <span id="st" class="mu"></span></h1>
 <p class="px"><span id="px">—</span> <span id="arr" style="font-size:44px"></span></p><div id="chg" class="mu">loading…</div>
 <div id="sig" class="badge WAIT">WAIT</div><div id="spk" class="spike"></div>
-<div class="btns"><button class="bb" id="bB">BUY</button><button class="bs" id="bS">SELL</button><button class="bc" id="bC">CLOSE</button></div>
-<div id="tpx" class="tp"></div><div class="card" id="pos" style="margin-top:8px;display:none"></div>
+<div id="trade"><div class="btns"><button class="bb" id="bB">BUY</button><button class="bs" id="bS">SELL</button><button class="bc" id="bC">CLOSE</button></div>
+<div id="tpx" class="tp"></div><div class="card" id="pos" style="margin-top:8px;display:none"></div><div id="rev" class="mu" style="text-align:center;font-size:18px;margin-top:8px"></div></div>
 <div class="row"><div class="card"><div class="mu">10-min move</div><div id="m10">—</div></div>
 <div class="card"><div class="mu">Stop (1.5×ATR14, 5m)</div><div id="atr">—</div></div></div>
 <div class="row"><div class="card"><div class="mu">Day high / low</div><div id="hl">—</div></div></div>
@@ -57,11 +58,11 @@ pos()}catch(e){$('st').textContent='· reconnecting'}}
 var P=JSON.parse(localStorage.gdPos||'null');function sv(){localStorage.gdPos=JSON.stringify(P)}
 function add(d){if(prev==null)return;if(P&&P.d!==d){alert('Close the '+(P.d>0?'BUY':'SELL')+' first.');return}if(!P)P={d:d,e:[]};if(P.e.length>=5){alert('Max 5 entries.');return}P.e.push(prev);sv();pos()}
 $('bB').onclick=function(){add(1)};$('bS').onclick=function(){add(-1)};$('bC').onclick=function(){if(P&&confirm('Close all entries?')){P=null;sv();pos()}};
-function pos(){var b=$('pos'),t=$('tpx');if(!P||prev==null){b.style.display='none';t.style.display='none';return}
+function pos(){var b=$('pos'),t=$('tpx'),R=$('rev');document.body.classList.toggle('inpos',!!P);if(!P||prev==null){b.style.display='none';t.style.display='none';R.textContent='';return}
  var m=prev,n=P.e.length,avg=P.e.reduce(function(a,x){return a+x},0)/n,d=P.d,st=atr?1.5*atr:avg*0.003,
  tp1=avg+d*st,lv=LV.map(function(l){return l[1]}).filter(function(x){return d>0?x>tp1:x<tp1}).sort(function(a,c){return d>0?a-c:c-a}),tp2=lv.length?lv[0]:avg+d*2*st,sl=avg-d*st,pl=(m-avg)*d;
  var msg='',cls='';if(d*(m-tp2)>=0){msg='✅ TAKE ALL PROFIT (TP2)';cls='BUY'}else if(d*(m-tp1)>=0){msg='💰 TAKE PARTIAL PROFIT (TP1)';cls='BUY'}else if(d*(m-sl)<=0){msg='⛔ STOP HIT, EXIT';cls='SELL'}else if(pl>0&&((d>0&&$('sig').textContent==='SELL')||(d<0&&$('sig').textContent==='BUY'))){msg='⚠ SIGNAL FLIPPED, SECURE PROFIT';cls='WAIT'}
- t.style.display=msg?'block':'none';t.className='tp '+cls;t.textContent=msg;b.style.display='block';
+ var b2=at(120000),mv=b2?d*(m/b2[1]-1)*100:0;R.innerHTML=mv<=-0.02?'<span class="dn">↘ Price moving AGAINST you ('+mv.toFixed(2)+'% / 2 min)</span>':mv>=0.02?'<span class="up">↗ Moving your way (+'+mv.toFixed(2)+'% / 2 min)</span>':'→ Flat';t.style.display=msg?'block':'none';t.className='tp '+cls;t.textContent=msg;b.style.display='block';
  b.innerHTML='<div class="mu">'+(d>0?'BUY':'SELL')+' · '+n+'/5 entries · avg '+f(avg)+'</div><div style="font-size:22px;font-weight:700" class="'+(pl>=0?'up':'dn')+'">'+(pl>=0?'+':'')+f(pl)+' $/oz ('+(pl/avg*100).toFixed(2)+'%)</div><div class="mu">TP1 '+f(tp1)+' · TP2 '+f(tp2)+' · SL '+f(sl)+'</div><div class="mu">Entries: '+P.e.map(f).join(', ')+'</div>'}
 candles().then(tick);setInterval(tick,1500);setInterval(candles,60000);
 </script></body></html>
