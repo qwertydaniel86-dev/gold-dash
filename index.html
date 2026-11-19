@@ -1,0 +1,53 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0b0f14"><title>XAU/USD Live</title>
+<style>
+body{margin:0;background:#0b0f14;color:#e6edf3;font:16px -apple-system,system-ui,sans-serif;padding:env(safe-area-inset-top) 14px 24px}
+h1{font-size:15px;color:#8b98a5;margin:14px 0 4px;font-weight:600}
+.px{font-size:54px;font-weight:700;letter-spacing:-1px;margin:0}.up{color:#2ecc71}.dn{color:#ff5c5c}.mu{color:#8b98a5;font-size:13px}
+.row{display:flex;gap:10px;margin-top:12px}.card{flex:1;background:#141b23;border-radius:12px;padding:12px}
+.badge{font-size:30px;font-weight:800;text-align:center;border-radius:12px;padding:14px;margin-top:12px}
+.BUY{background:#14532d;color:#4ade80}.SELL{background:#5f1d1d;color:#ff8080}.WAIT{background:#3b3320;color:#f5c542}
+.spike{display:none;text-align:center;font-weight:800;padding:10px;border-radius:10px;margin-top:8px;animation:f .6s infinite alternate}
+@keyframes f{to{opacity:.35}}.lv{display:flex;justify-content:space-between;padding:7px 10px;border-radius:8px}
+.near{background:#24303c;font-weight:700;outline:1px solid #f5c542}canvas{width:100%;height:140px;background:#141b23;border-radius:12px;margin-top:12px}
+.note{color:#8b98a5;font-size:12px;margin-top:14px;text-align:center}
+</style></head><body>
+<h1>XAU/USD · Gold <span id="st" class="mu"></span></h1>
+<p id="px" class="px">—</p><div id="chg" class="mu">loading…</div>
+<div id="sig" class="badge WAIT">WAIT</div><div id="spk" class="spike"></div>
+<div class="row"><div class="card"><div class="mu">10-min move</div><div id="m10">—</div></div>
+<div class="card"><div class="mu">Stop (1.5×ATR14, 5m)</div><div id="atr">—</div></div></div>
+<div class="row"><div class="card"><div class="mu">Day high / low</div><div id="hl">—</div></div></div>
+<div class="card" style="margin-top:12px"><div class="mu">Key levels (Nov 19)</div><div id="lv"></div></div>
+<canvas id="ch" width="700" height="280"></canvas>
+<div class="note">Alerts only, no trading. <b>Signals are not financial advice.</b><br>Data: biquote.io</div>
+<script>
+var API='https://biquote.io/api/XAUUSD',LV=[['R2',3805],['R1',3780],['S1',3720],['S2',3650]],H=[],prev=null,atr=null,bars1=[];
+function $(i){return document.getElementById(i)}
+function f(x){return x.toFixed(2)}
+function at(ms){var t=Date.now()-ms,b=null;for(var i=0;i<H.length;i++){if(H[i][0]<=t)b=H[i];else break}return b}
+async function j(u){var r=await fetch(u,{cache:'no-store'});return r.json()}
+async function candles(){try{var a=(await j(API+'/ohlc?interval=1m&limit=100')).bars.slice().reverse();bars1=a;
+ if(!H.length)a.forEach(function(b){H.push([Date.parse(b.openTime)+60000,b.close])});
+ var c=(await j(API+'/ohlc?interval=5m&limit=16')).bars.slice().reverse(),tr=[];
+ for(var i=1;i<c.length;i++){var p=c[i-1].close;tr.push(Math.max(c[i].high-c[i].low,Math.abs(c[i].high-p),Math.abs(c[i].low-p)))}
+ tr=tr.slice(-14);atr=tr.reduce(function(s,x){return s+x},0)/tr.length;draw()}catch(e){}}
+function draw(){var cv=$('ch'),g=cv.getContext('2d'),W=cv.width,Hh=cv.height;g.clearRect(0,0,W,Hh);if(bars1.length<2)return;
+ var v=bars1.map(function(b){return b.close}),mn=Math.min.apply(0,v),mx=Math.max.apply(0,v),r=mx-mn||1;
+ g.strokeStyle=v[v.length-1]>=v[0]?'#2ecc71':'#ff5c5c';g.lineWidth=3;g.beginPath();
+ v.forEach(function(x,i){var X=i/(v.length-1)*W,Y=Hh-10-(x-mn)/r*(Hh-20);i?g.lineTo(X,Y):g.moveTo(X,Y)});g.stroke()}
+async function tick(){try{var q=await j(API),m=q.mid,now=Date.now();H.push([now,m]);while(H.length&&H[0][0]<now-900000)H.shift();
+ var px=$('px');px.textContent=f(m);px.className='px '+(prev==null||m>=prev?(q.dayDiffPercent>=0&&prev==null?'up':(m>prev?'up':(m<prev?'dn':px.className.split(' ')[1]||'up'))):'dn');prev=m;
+ $('chg').innerHTML='<span class="'+(q.dayDiffPercent>=0?'up':'dn')+'">'+(q.dayDiffPercent>=0?'+':'')+q.dayDiffPercent.toFixed(2)+'% today</span> · bid '+f(q.bid)+' / ask '+f(q.ask);
+ $('st').textContent=q.stale||q.marketState!=='open'?'· '+(q.marketState||'stale'):'· live';
+ $('hl').textContent=f(q.high)+' / '+f(q.low);
+ var b10=at(600000),p10=b10?(m/b10[1]-1)*100:0,s=p10>=0.05?'BUY':p10<=-0.05?'SELL':'WAIT';
+ $('sig').className='badge '+s;$('sig').textContent=s;$('m10').innerHTML='<span class="'+(p10>=0?'up':'dn')+'">'+(p10>=0?'+':'')+p10.toFixed(3)+'%</span>';
+ var b2=at(120000),p2=b2?(m/b2[1]-1)*100:0,k=$('spk');
+ if(Math.abs(p2)>=0.2){k.style.display='block';k.className='spike '+(p2>0?'BUY':'SELL');k.textContent=(p2>0?'SPIKE UP ':'SPIKE DOWN ')+p2.toFixed(2)+'% / 2 min'}else k.style.display='none';
+ if(atr){var d=1.5*atr;$('atr').innerHTML=f(d)+'<div class="mu">long '+f(m-d)+' · short '+f(m+d)+'</div>'}
+ var ni=0;LV.forEach(function(l,i){if(Math.abs(l[1]-m)<Math.abs(LV[ni][1]-m))ni=i});
+ $('lv').innerHTML=LV.map(function(l,i){return '<div class="lv'+(i==ni?' near':'')+'"><span>'+l[0]+' '+l[1]+(i==ni?' ← nearest':'')+'</span><span class="mu">'+(l[1]-m>=0?'+':'')+f(l[1]-m)+'</span></div>'}).join('')
+}catch(e){$('st').textContent='· reconnecting'}}
+candles().then(tick);setInterval(tick,1500);setInterval(candles,60000);
+</script></body></html>
