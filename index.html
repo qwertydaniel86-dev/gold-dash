@@ -37,7 +37,7 @@ function f(x){return x.toFixed(2)}
 function at(ms){var t=Date.now()-ms,b=null;for(var i=0;i<H.length;i++){if(H[i][0]<=t)b=H[i];else break}return b}
 async function j(u){var r=await fetch(u,{cache:'no-store'});return r.json()}
 async function candles(){try{var a=(await j(API+'/ohlc?interval=1m&limit=100')).bars.slice().reverse();bars1=a;
- if(!H.length)a.forEach(function(b){H.push([Date.parse(b.openTime)+60000,b.close])});
+ var h0=H.length?H[0][0]:Infinity,sd=[];a.forEach(function(b){var t=Date.parse(b.openTime)+60000;if(t<h0)sd.push([t,b.close])});if(sd.length)H=sd.concat(H);
  var c=(await j(API+'/ohlc?interval=5m&limit=16')).bars.slice().reverse(),tr=[];
  for(var i=1;i<c.length;i++){var p=c[i-1].close;tr.push(Math.max(c[i].high-c[i].low,Math.abs(c[i].high-p),Math.abs(c[i].low-p)))}
  tr=tr.slice(-14);atr=tr.reduce(function(s,x){return s+x},0)/tr.length;draw()}catch(e){}}
