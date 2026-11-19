@@ -41,7 +41,7 @@ async function tick(){try{var q=await j(API),m=q.mid,now=Date.now();H.push([now,
  $('chg').innerHTML='<span class="'+(q.dayDiffPercent>=0?'up':'dn')+'">'+(q.dayDiffPercent>=0?'+':'')+q.dayDiffPercent.toFixed(2)+'% today</span> · bid '+f(q.bid)+' / ask '+f(q.ask);
  $('st').textContent=q.stale||q.marketState!=='open'?'· '+(q.marketState||'stale'):'· live';
  $('hl').textContent=f(q.high)+' / '+f(q.low);
- var b10=at(600000),p10=b10?(m/b10[1]-1)*100:0,s=p10>=0.05?'BUY':p10<=-0.05?'SELL':'WAIT';
+ var b10=at(600000),p10=b10?(m/b10[1]-1)*100:0,s=p10>=0.02?'BUY':p10<=-0.02?'SELL':'WAIT';
  $('sig').className='badge '+s;$('sig').textContent=s;$('m10').innerHTML='<span class="'+(p10>=0?'up':'dn')+'">'+(p10>=0?'+':'')+p10.toFixed(3)+'%</span>';
  var b2=at(120000),p2=b2?(m/b2[1]-1)*100:0,k=$('spk');
  if(Math.abs(p2)>=0.2){k.style.display='block';k.className='spike '+(p2>0?'BUY':'SELL');k.textContent=(p2>0?'SPIKE UP ':'SPIKE DOWN ')+p2.toFixed(2)+'% / 2 min'}else k.style.display='none';
