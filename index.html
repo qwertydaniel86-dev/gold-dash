@@ -50,6 +50,7 @@ body.inpos #top>#nt,body.inpos #top>#stats,body.inpos #top>#parts,body.inpos #to
 }
 #parts{display:flex;gap:4px;margin-top:5px;font-size:11px}#parts span{flex:1;text-align:center;background:#141b23;border-radius:8px;padding:3px 0;white-space:nowrap;min-width:0}.ar{padding:8px 0;border-top:1px solid #1f2a37}.ar:first-of-type{border-top:0}.ah{display:flex;gap:14px;align-items:baseline;font-size:15px}.ah b{flex:1;font-size:14px}.at{margin-top:4px;font-weight:700;font-size:14px;color:#9aa4b2}.at.up{color:#2fd27a}.at.dn{color:#ff5b5b}
 #arow{display:flex;gap:10px;justify-content:flex-start;align-items:center;margin-top:4px;font-size:11px;white-space:nowrap;overflow:hidden;color:#8b98a5}#arow .ag{display:flex;gap:4px;align-items:center}#arow i{font-style:normal}#arow em{font-style:normal;font-weight:700;font-size:10px;padding:1px 5px;border-radius:6px;background:#1f2a37}#arow em.up{color:#2fd27a}#arow em.dn{color:#ff5b5b}#arow em.none{color:#f5c542}#arow em.na{color:#8b98a5}
+.at{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 10px}.at .as{font-size:14px;font-weight:800}.at.up .as{color:#2fd27a}.at.dn .as{color:#ff5b5b}.at.none .as{color:#f5c542}.at.none{color:#9aa4b2}
 </style></head><body>
 <div id="top"><h1>XAU/USD · Gold <span id="st" class="mu"></span></h1>
 <div id="pxrow"><div id="pxl"><p class="px"><span id="px">—</span> <span id="arr"></span></p><div id="chg" class="mu">loading…</div></div><canvas id="ch"></canvas></div>
@@ -66,7 +67,8 @@ body.inpos #top>#nt,body.inpos #top>#stats,body.inpos #top>#parts,body.inpos #to
 function aroon(b,n){n=n||14;if(!b||b.length<n+1)return null;var w=b.slice(-(n+1)),hi=0,lo=0;for(var i=1;i<w.length;i++){if(w[i].high>=w[hi].high)hi=i;if(w[i].low<=w[lo].low)lo=i}return{up:100*(n-(n-hi))/n,down:100*(n-(n-lo))/n}}
 function aroonLabel(u,d){if(u>70&&d<30)return{k:'up',t:'Uptrend: buyers in control'};if(d>70&&u<30)return{k:'dn',t:'Downtrend: sellers in control'};return{k:'none',t:'No clear trend: wait'}}
 var aroonNote="Aroon confirms a trend that's already running, but it can't predict sudden spikes.";
-function aroonSeg(a){if(!a)return{u:'–',d:'–',k:'na',tag:'–'};var l=aroonLabel(a.up,a.down);return{u:String(Math.round(a.up)),d:String(Math.round(a.down)),k:l.k,tag:l.k=='up'?'UP':l.k=='dn'?'DOWN':'WAIT'}}
+function aroonSeg(a){if(!a)return{u:'–',d:'–',k:'na',tag:'–'};var l=aroonLabel(a.up,a.down);return{u:String(Math.round(a.up)),d:String(Math.round(a.down)),k:l.k,tag:l.k=='up'?'BUY':l.k=='dn'?'SELL':'WAIT'}}
+function aroonSigText(a){return 'Aroon signal: '+aroonSeg(a).tag}
 function aroonRow(A){return{m5:aroonSeg(A&&A.m5),h1:aroonSeg(A&&A.h1)}}
 var SIG_THR=1,SIG_CONF=3,SIG_NAME='Momentum (30s-weighted, 1-10 min)';/* blend score: each window's % move / its own trigger 0.02% x sqrt(window/10min), weighted; BUY >= +1, SELL <= -1; held until |score| < 0.5; a change must repeat SIG_CONF ticks */
 var SIG_W=[{ms:30000,w:0.4},{ms:60000,w:0.2},{ms:120000,w:0.15},{ms:300000,w:0.15},{ms:600000,w:0.1}];
@@ -91,7 +93,7 @@ function partsOut(P){var e=$('parts');if(!e)return;var nm={30000:'30s',60000:'1m
 function aroonRowOut(){var e=$('arow');if(!e)return;var r=aroonRow(AR);e.innerHTML='<b>Aroon</b>'+[['5m',r.m5],['1h',r.h1]].map(function(x){var g=x[1],na=g.k=='na';return '<span class="ag"><i>'+x[0]+'</i> <span class="'+(na?'mu':'up')+'">▲'+g.u+'</span> <span class="'+(na?'mu':'dn')+'">▼'+g.d+'</span> <em class="'+g.k+'">'+g.tag+'</em></span>'}).join('')}
 function arr(){aroonRowOut();var c=$('arc');if(!AR){c.style.display='none';return}c.style.display='block';
  $('arl').innerHTML=[['5-minute',AR.m5],['1-hour',AR.h1]].map(function(r){var a=r[1];if(!a)return '<div class="lv"><span>'+r[0]+'</span><span class="mu">not enough data yet</span></div>';var l=aroonLabel(a.up,a.down);
-  return '<div class="ar"><div class="ah"><b>'+r[0]+'</b><span class="up">Up '+Math.round(a.up)+'</span><span class="dn">Down '+Math.round(a.down)+'</span></div><div class="at '+l.k+'">'+l.t+'</div></div>'}).join('')}
+  return '<div class="ar"><div class="ah"><b>'+r[0]+'</b><span class="up">Up '+Math.round(a.up)+'</span><span class="dn">Down '+Math.round(a.down)+'</span></div><div class="at '+l.k+'"><span>'+l.t+'</span><b class="as '+l.k+'">'+aroonSigText(a)+'</b></div></div>'}).join('')}
 var ALb=false;
 async function aroonLoad(){if(ALb)return;ALb=true;try{var r=await Promise.all(['5m','1h'].map(function(iv){return j(API+'/ohlc?interval='+iv+'&limit=40').then(function(d){return aroon(d.bars.slice().reverse(),14)}).catch(function(){return null})}));AR={m5:r[0],h1:r[1]};arr()}catch(e){}ALb=false}
 function draw(){var cv=$('ch');if(!cv||!cv.clientWidth)return;var dpr=window.devicePixelRatio||1,W=Math.round(cv.clientWidth*dpr),Hh=Math.round(cv.clientHeight*dpr);if(cv.width!=W||cv.height!=Hh){cv.width=W;cv.height=Hh}

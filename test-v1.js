@@ -1,7 +1,7 @@
 // node test-v1.js : tests the pure logic block (/*LOGIC*/ ... /*ENDLOGIC*/) of index.html (v1)
 var fs=require('fs'),assert=require('assert'),src=fs.readFileSync(__dirname+'/index.html','utf8');
 var m=src.match(/\/\*LOGIC\*\/([\s\S]*?)\/\*ENDLOGIC\*\//);assert(m,'logic block');
-var L=new Function(m[1]+';return{SIG_THR,SIG_CONF,SIG_W,SIG_NAME,sigThr,sigTol,sigBase,sigScore,sigStep,sigRaw,aroonSeg,aroonRow,aroon,aroonLabel,aroonNote}')(),n=0;
+var L=new Function(m[1]+';return{SIG_THR,SIG_CONF,SIG_W,SIG_NAME,sigThr,sigTol,sigBase,sigScore,sigStep,sigRaw,aroonSigText,aroonSeg,aroonRow,aroon,aroonLabel,aroonNote}')(),n=0;
 function t(name,fn){fn();n++;console.log('ok',name)}
 // Aroon(14)
 function bars(hs,ls){return hs.map(function(h,i){return{high:h,low:ls[i]}})}
@@ -51,15 +51,18 @@ t('15 min of 1.5s history covers the full 10-min window (>=600 points)',function
 
 // Aroon top row segment
 t('aroonSeg: values rounded, colour kind and tag',function(){
- assert.deepStrictEqual(L.aroonSeg({up:14.28,down:100}),{u:'14',d:'100',k:'dn',tag:'DOWN'});assert.deepStrictEqual(L.aroonSeg({up:40,down:100}),{u:'40',d:'100',k:'none',tag:'WAIT'});
- assert.deepStrictEqual(L.aroonSeg({up:100,down:0}),{u:'100',d:'0',k:'up',tag:'UP'});
- assert.deepStrictEqual(L.aroonSeg({up:0,down:100}),{u:'0',d:'100',k:'dn',tag:'DOWN'});
+ assert.deepStrictEqual(L.aroonSeg({up:14.28,down:100}),{u:'14',d:'100',k:'dn',tag:'SELL'});assert.deepStrictEqual(L.aroonSeg({up:40,down:100}),{u:'40',d:'100',k:'none',tag:'WAIT'});
+ assert.deepStrictEqual(L.aroonSeg({up:100,down:0}),{u:'100',d:'0',k:'up',tag:'BUY'});
+ assert.deepStrictEqual(L.aroonSeg({up:0,down:100}),{u:'0',d:'100',k:'dn',tag:'SELL'});
  assert.deepStrictEqual(L.aroonSeg({up:50,down:50}),{u:'50',d:'50',k:'none',tag:'WAIT'});
- assert.strictEqual(L.aroonSeg({up:71,down:29}).tag,'UP');assert.strictEqual(L.aroonSeg({up:70,down:29}).tag,'WAIT');assert.strictEqual(L.aroonSeg({up:29,down:71}).tag,'DOWN');assert.strictEqual(L.aroonSeg({up:30,down:71}).tag,'WAIT')});
+ assert.strictEqual(L.aroonSeg({up:71,down:29}).tag,'BUY');assert.strictEqual(L.aroonSeg({up:70,down:29}).tag,'WAIT');assert.strictEqual(L.aroonSeg({up:29,down:71}).tag,'SELL');assert.strictEqual(L.aroonSeg({up:30,down:71}).tag,'WAIT')});
 t('aroonSeg: missing data shows dashes',function(){var na={u:'–',d:'–',k:'na',tag:'–'};assert.deepStrictEqual(L.aroonSeg(null),na);assert.deepStrictEqual(L.aroonSeg(undefined),na)});
 t('aroonRow: 5m and 1h from AR, dashes when AR is null or half-loaded',function(){
  var r=L.aroonRow({m5:{up:14,down:100},h1:{up:0,down:50}});assert.strictEqual(r.m5.u,'14');assert.strictEqual(r.m5.d,'100');assert.strictEqual(r.h1.u,'0');assert.strictEqual(r.h1.d,'50');
- var n=L.aroonRow(null);assert.strictEqual(n.m5.u,'–');assert.strictEqual(n.h1.d,'–');var h=L.aroonRow({m5:{up:100,down:0},h1:null});assert.strictEqual(h.m5.tag,'UP');assert.strictEqual(h.h1.tag,'–')});
+ var n=L.aroonRow(null);assert.strictEqual(n.m5.u,'–');assert.strictEqual(n.h1.d,'–');var h=L.aroonRow({m5:{up:100,down:0},h1:null});assert.strictEqual(h.m5.tag,'BUY');assert.strictEqual(h.h1.tag,'–')});
 
-t('v1 page: label, 15s Aroon, old wording gone, data credit kept',function(){assert(src.indexOf('Momentum (30s-weighted, 1-10 min)')>0);assert(!/10-min move|Momentum \(10|Momentum \(2-min|Momentum \(30-sec/i.test(src));assert(/setInterval\(aroonLoad,15000\)/.test(src));assert(/Data: biquote\.io/.test(src));assert(/id="arow"/.test(src)&&/id="arc"/.test(src)&&/id="parts"/.test(src))});
+t('aroonSigText: bold card text per timeframe (BUY / SELL / WAIT, dash when no data)',function(){assert.strictEqual(L.aroonSigText({up:100,down:0}),'Aroon signal: BUY');assert.strictEqual(L.aroonSigText({up:0,down:100}),'Aroon signal: SELL');assert.strictEqual(L.aroonSigText({up:50,down:50}),'Aroon signal: WAIT');assert.strictEqual(L.aroonSigText({up:70,down:29}),'Aroon signal: WAIT');assert.strictEqual(L.aroonSigText({up:71,down:30}),'Aroon signal: WAIT');assert.strictEqual(L.aroonSigText({up:71,down:29}),'Aroon signal: BUY');assert.strictEqual(L.aroonSigText({up:29,down:71}),'Aroon signal: SELL');assert.strictEqual(L.aroonSigText({up:30,down:71}),'Aroon signal: WAIT');assert.strictEqual(L.aroonSigText(null),'Aroon signal: –')});
+t('aroon row never shows UP/DOWN tags any more',function(){['m5','h1'].forEach(function(k){assert(['BUY','SELL','WAIT','–'].indexOf(L.aroonRow({m1:{up:100,down:0},m5:{up:0,down:100},h1:{up:50,down:50}})[k].tag)>=0)});assert.strictEqual(L.aroonRow({m5:{up:100,down:0},h1:{up:0,down:100}}).m5.tag,'BUY');assert.strictEqual(L.aroonRow({m5:{up:100,down:0},h1:{up:0,down:100}}).h1.tag,'SELL')});
+
+t('v1 page: label, 15s Aroon, old wording gone, data credit kept',function(){assert(src.indexOf('Momentum (30s-weighted, 1-10 min)')>0);assert(!/10-min move|Momentum \(10|Momentum \(2-min|Momentum \(30-sec/i.test(src));assert(/setInterval\(aroonLoad,15000\)/.test(src));assert(/Data: biquote\.io/.test(src));assert(/Aroon signal: /.test(src)&&/id="arow"/.test(src)&&/id="arc"/.test(src)&&/id="parts"/.test(src))});
 console.log(n+' tests passed');
