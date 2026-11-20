@@ -18,17 +18,45 @@ body.inpos{padding-bottom:52vh}body.inpos #trade{position:fixed;left:0;right:0;b
 .ew{flex:1;text-align:center;font-weight:800;font-size:14px}.bl{animation:f .6s infinite alternate}.WAITc{color:#f5c542}.en{flex:.8;text-align:right;font-weight:700;font-size:18px}.en .mu{font-size:11px;font-weight:400}
 .ex{border:0;background:#334155;color:#fff;border-radius:8px;width:30px;height:30px;font-size:14px;touch-action:manipulation}
 .note{color:#8b98a5;font-size:12px;margin-top:14px;text-align:center}
+
+body{padding-top:0}
+#top{position:sticky;top:0;z-index:20;background:#0b0f14;margin:0 -14px;padding:env(safe-area-inset-top) 14px 6px;box-shadow:0 6px 8px -6px #000}
+#top .hd,#top h1{margin:4px 0 2px}
+#pxrow{display:flex;align-items:center;gap:10px}
+#pxl{flex:0 0 auto;max-width:60%;min-width:0}
+#top .px{font-size:40px;margin:0;white-space:nowrap}
+#top #arr{font-size:24px!important}
+#top #chg{font-size:11px;line-height:1.25}
+#pxrow #ch{flex:1;min-width:80px;width:auto;height:68px;margin:0;border-radius:10px}
+#top .badge{font-size:22px;padding:6px;margin-top:6px;border-radius:10px}
+#top .btns{margin-top:6px}#top .btns button{padding:10px 0;font-size:16px}
+#top #nt{text-align:center;font-size:12px;margin-top:4px}#top #nt:empty{display:none}
+#stats{display:flex;gap:6px;margin-top:6px}#stats .card{padding:5px 8px;border-radius:10px;font-size:14px;min-width:0}#stats .card.dh{flex:1.35}
+#stats .mu{font-size:10px;line-height:1.2}#stats #m10 .mu,#stats #atr .mu{display:none}#stats .card .mu:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#top .spike,#top .fv{margin-top:4px;padding:4px;font-size:13px}
+#top .str{margin:2px 0 0;font-size:11px}
+@media (orientation:landscape) and (max-height:560px){
+#top{display:grid;grid-template-columns:1fr 1fr;column-gap:12px;align-items:start;padding-bottom:4px}
+#top>.hd,#top>h1{grid-column:1;grid-row:1}
+#pxrow{grid-column:1;grid-row:2/span 8;flex-direction:column;align-items:stretch;gap:4px}
+#top .px{font-size:34px}#pxrow #ch{height:52px;flex:none;width:100%}
+#top>#sig,#top>.btns,#top>#nt,#top>#stats,#top>#spk,#top>#fvw,#top>#str{grid-column:2}
+#top .badge{margin-top:4px}
+body.inpos #top>.hd,body.inpos #top>h1{grid-column:1/-1}
+body.inpos #pxrow{grid-column:1/-1;grid-row:auto;flex-direction:row;align-items:center}
+body.inpos #pxrow #ch{height:46px;flex:1;width:auto}
+body.inpos #top>#sig{grid-column:1}body.inpos #top>.btns{grid-column:2;margin-top:4px}
+body.inpos #top>#nt,body.inpos #top>#stats,body.inpos #top>#spk,body.inpos #top>#fvw,body.inpos #top>#str{grid-column:1/-1}
+}
 </style></head><body>
-<h1>XAU/USD · Gold <span id="st" class="mu"></span></h1>
-<p class="px"><span id="px">—</span> <span id="arr" style="font-size:44px"></span></p><div id="chg" class="mu">loading…</div>
+<div id="top"><h1>XAU/USD · Gold <span id="st" class="mu"></span></h1>
+<div id="pxrow"><div id="pxl"><p class="px"><span id="px">—</span> <span id="arr"></span></p><div id="chg" class="mu">loading…</div></div><canvas id="ch"></canvas></div>
 <div id="sig" class="badge WAIT">WAIT</div><div id="str" class="str"></div><div id="spk" class="spike"></div>
-<div id="trade"><div class="btns"><button class="bb" id="bB">BUY</button><button class="bs" id="bS">SELL</button><button class="bc" id="bC">CLOSE</button></div>
-<div id="nt" class="mu" style="text-align:center;min-height:18px;margin-top:6px"></div><div id="tpx" class="tp"></div><div id="pos" style="display:none"></div><div id="rev" class="mu" style="text-align:center;font-size:18px;margin-top:8px"></div></div>
-<div class="row"><div class="card"><div class="mu">10-min move</div><div id="m10">—</div></div>
-<div class="card"><div class="mu">Stop (1.5×ATR14, 5m)</div><div id="atr">—</div></div></div>
-<div class="row"><div class="card"><div class="mu">Day high / low</div><div id="hl">—</div></div></div>
+<div class="btns"><button class="bb" id="bB">BUY</button><button class="bs" id="bS">SELL</button><button class="bc" id="bC">CLOSE</button></div>
+<div id="nt" class="mu"></div>
+<div id="stats"><div class="card"><div class="mu">10-min move</div><div id="m10">—</div></div><div class="card"><div class="mu">Stop (1.5×ATR14, 5m)</div><div id="atr">—</div></div><div class="card dh"><div class="mu">Day high / low</div><div id="hl">—</div></div></div></div>
+<div id="trade"><div id="tpx" class="tp"></div><div id="pos" style="display:none"></div><div id="rev" class="mu" style="text-align:center;font-size:18px;margin-top:8px"></div></div>
 <div class="card" style="margin-top:12px"><div class="mu">Key levels (Nov 19)</div><div id="lv"></div></div>
-<canvas id="ch" width="700" height="280"></canvas>
 <div class="note">Alerts only, no trading. <b>Signals are not financial advice.</b><br>Data: biquote.io</div>
 <script>
 var API='https://biquote.io/api/XAUUSD',LV=[['R2',3805],['R1',3780],['S1',3720],['S2',3650]],H=[],prev=null,atr=null,bars1=[];
@@ -41,10 +69,17 @@ async function candles(){try{var a=(await j(API+'/ohlc?interval=1m&limit=100')).
  var c=(await j(API+'/ohlc?interval=5m&limit=16')).bars.slice().reverse(),tr=[];
  for(var i=1;i<c.length;i++){var p=c[i-1].close;tr.push(Math.max(c[i].high-c[i].low,Math.abs(c[i].high-p),Math.abs(c[i].low-p)))}
  tr=tr.slice(-14);atr=tr.reduce(function(s,x){return s+x},0)/tr.length;draw()}catch(e){}}
-function draw(){var cv=$('ch'),g=cv.getContext('2d'),W=cv.width,Hh=cv.height;g.clearRect(0,0,W,Hh);if(bars1.length<2)return;
- var v=bars1.map(function(b){return b.close}),mn=Math.min.apply(0,v),mx=Math.max.apply(0,v),r=mx-mn||1;
- g.strokeStyle=v[v.length-1]>=v[0]?'#2ecc71':'#ff5c5c';g.lineWidth=3;g.beginPath();
- v.forEach(function(x,i){var X=i/(v.length-1)*W,Y=Hh-10-(x-mn)/r*(Hh-20);i?g.lineTo(X,Y):g.moveTo(X,Y)});g.stroke()}
+function draw(){var cv=$('ch');if(!cv||!cv.clientWidth)return;var dpr=window.devicePixelRatio||1,W=Math.round(cv.clientWidth*dpr),Hh=Math.round(cv.clientHeight*dpr);if(cv.width!=W||cv.height!=Hh){cv.width=W;cv.height=Hh}
+ var g=cv.getContext('2d');g.clearRect(0,0,W,Hh);if(bars1.length<2)return;
+ var v=bars1.slice(-100).map(function(b){return b.close});if(prev!=null)v.push(prev);
+ var mn=Math.min.apply(0,v),mx=Math.max.apply(0,v),r0=mx-mn||1,ln=[];
+ try{ents().forEach(function(x){[[x.p,'#f5c542'],[x.sl,'#ff5c5c']].forEach(function(a){if(a[0]>=mn-0.6*r0&&a[0]<=mx+0.6*r0)ln.push(a)})})}catch(e){}
+ ln.forEach(function(a){if(a[0]<mn)mn=a[0];if(a[0]>mx)mx=a[0]});var r=mx-mn||1,P=6*dpr;
+ function Y(x){return Hh-P-(x-mn)/r*(Hh-2*P)}
+ g.lineWidth=1*dpr;g.setLineDash([4*dpr,3*dpr]);ln.forEach(function(a){g.strokeStyle=a[1];g.beginPath();g.moveTo(0,Y(a[0]));g.lineTo(W,Y(a[0]));g.stroke()});g.setLineDash([]);
+ var col=v[v.length-1]>=v[0]?'#2ecc71':'#ff5c5c',X=function(i){return i/(v.length-1)*(W-8*dpr)};
+ g.strokeStyle=col;g.lineWidth=2*dpr;g.lineJoin='round';g.beginPath();v.forEach(function(x,i){i?g.lineTo(X(i),Y(x)):g.moveTo(X(i),Y(x))});g.stroke();
+ g.fillStyle=col;g.beginPath();g.arc(X(v.length-1),Y(v[v.length-1]),3.5*dpr,0,7);g.fill()}
 async function tick(){try{var q=await j(API),m=q.mid,now=Date.now();H.push([now,m]);while(H.length&&H[0][0]<now-900000)H.shift();
  var px=$('px');px.textContent=f(m);px.className=(prev==null?(q.dayDiffPercent>=0?'up':'dn'):m>prev?'up':m<prev?'dn':(px.className||'up'));prev=m;
  $('chg').innerHTML='<span class="'+(q.dayDiffPercent>=0?'up':'dn')+'">'+(q.dayDiffPercent>=0?'+':'')+q.dayDiffPercent.toFixed(2)+'% today</span> · bid '+f(q.bid)+' / ask '+f(q.ask);
@@ -57,8 +92,9 @@ async function tick(){try{var q=await j(API),m=q.mid,now=Date.now();H.push([now,
  if(atr){var d=1.5*atr;$('atr').innerHTML=f(d)+'<div class="mu">long '+f(m-d)+' · short '+f(m+d)+'</div>'}
  var ni=0;LV.forEach(function(l,i){if(Math.abs(l[1]-m)<Math.abs(LV[ni][1]-m))ni=i});
  $('lv').innerHTML=LV.map(function(l,i){return '<div class="lv'+(i==ni?' near':'')+'"><span>'+l[0]+' '+l[1]+(i==ni?' ← nearest':'')+'</span><span class="mu">'+(l[1]-m>=0?'+':'')+f(l[1]-m)+'</span></div>'}).join('')
-pos()}catch(e){$('st').textContent='· reconnecting'}}
+try{draw()}catch(e){}pos()}catch(e){$('st').textContent='· reconnecting'}}
 
+function ents(){return E.map(function(x){return{p:x.p,sl:x.p*(1-x.d*0.0005)}})}
 var E=[];try{E=JSON.parse(localStorage.gdE||'[]')||[]}catch(e){}function sv(){try{localStorage.gdE=JSON.stringify(E)}catch(e){}}
 function add(d){if(prev==null)return;if(E.length>=5){note('Max 5 entries.');return}E.push({d:d,p:prev});sv();note((d>0?'BUY':'SELL')+' #'+E.length+' at '+f(prev));pos()}
 var NT=0;function note(x){var n=$('nt');n.textContent=x;clearTimeout(NT);NT=setTimeout(function(){n.textContent=''},2500)}
