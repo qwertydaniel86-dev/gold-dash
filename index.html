@@ -40,26 +40,41 @@ body{padding-top:0}
 #top>.hd,#top>h1{grid-column:1;grid-row:1}
 #pxrow{grid-column:1;grid-row:2/span 8;flex-direction:column;align-items:stretch;gap:4px}
 #top .px{font-size:34px}#pxrow #ch{height:52px;flex:none;width:100%}
-#top>#sig,#top>.btns,#top>#nt,#top>#stats,#top>#spk,#top>#fvw,#top>#str{grid-column:2}
+#top>#sig,#top>.btns,#top>#nt,#top>#stats,#top>#parts,#top>#spk,#top>#fvw,#top>#str{grid-column:2}
 #top .badge{margin-top:4px}
 body.inpos #top>.hd,body.inpos #top>h1{grid-column:1/-1}
 body.inpos #pxrow{grid-column:1/-1;grid-row:auto;flex-direction:row;align-items:center}
 body.inpos #pxrow #ch{height:46px;flex:1;width:auto}
 body.inpos #top>#sig{grid-column:1}body.inpos #top>.btns{grid-column:2;margin-top:4px}
-body.inpos #top>#nt,body.inpos #top>#stats,body.inpos #top>#spk,body.inpos #top>#fvw,body.inpos #top>#str{grid-column:1/-1}
+body.inpos #top>#nt,body.inpos #top>#stats,body.inpos #top>#parts,body.inpos #top>#spk,body.inpos #top>#fvw,body.inpos #top>#str{grid-column:1/-1}
 }
+#parts{display:flex;gap:4px;margin-top:5px;font-size:11px}#parts span{flex:1;text-align:center;background:#141b23;border-radius:8px;padding:3px 0;white-space:nowrap;min-width:0}.ar{padding:8px 0;border-top:1px solid #1f2a37}.ar:first-of-type{border-top:0}.ah{display:flex;gap:14px;align-items:baseline;font-size:15px}.ah b{flex:1;font-size:14px}.at{margin-top:4px;font-weight:700;font-size:14px;color:#9aa4b2}.at.up{color:#2fd27a}.at.dn{color:#ff5b5b}
 </style></head><body>
 <div id="top"><h1>XAU/USD · Gold <span id="st" class="mu"></span></h1>
 <div id="pxrow"><div id="pxl"><p class="px"><span id="px">—</span> <span id="arr"></span></p><div id="chg" class="mu">loading…</div></div><canvas id="ch"></canvas></div>
 <div id="sig" class="badge WAIT">WAIT</div><div id="str" class="str"></div><div id="spk" class="spike"></div>
 <div class="btns"><button class="bb" id="bB">BUY</button><button class="bs" id="bS">SELL</button><button class="bc" id="bC">CLOSE</button></div>
 <div id="nt" class="mu"></div>
-<div id="stats"><div class="card"><div class="mu">10-min move</div><div id="m10">—</div></div><div class="card"><div class="mu">Stop (1.5×ATR14, 5m)</div><div id="atr">—</div></div><div class="card dh"><div class="mu">Day high / low</div><div id="hl">—</div></div></div></div>
+<div id="stats"><div class="card"><div class="mu" title="Momentum (30s-weighted, 1-10 min)">Signal score</div><div id="m10">—</div></div><div class="card"><div class="mu">Stop (1.5×ATR14, 5m)</div><div id="atr">—</div></div><div class="card dh"><div class="mu">Day high / low</div><div id="hl">—</div></div></div><div id="parts"></div></div>
 <div id="trade"><div id="tpx" class="tp"></div><div id="pos" style="display:none"></div><div id="rev" class="mu" style="text-align:center;font-size:18px;margin-top:8px"></div></div>
 <div class="card" style="margin-top:12px"><div class="mu">Key levels (Nov 19)</div><div id="lv"></div></div>
-<div class="note">Alerts only, no trading. <b>Signals are not financial advice.</b><br>Data: biquote.io</div>
+<div class="card" id="arc" style="margin-top:12px;display:none"><div class="mu">Aroon (14) · trend check</div><div id="arl"></div><div class="mu" style="font-size:12px;margin-top:8px">Aroon confirms a trend that's already running, but it can't predict sudden spikes.</div></div>
+<div class="note">Alerts only, no trading. <b>Signals are not financial advice.</b><br>Data: biquote.io<br>Signal: Momentum (30s-weighted, 1-10 min). It blends the 30s, 1m, 2m, 5m and 10m moves, each scaled to its own trigger, and needs 3 ticks in a row to change.</div>
 <script>
-var API='https://biquote.io/api/XAUUSD',LV=[['R2',3805],['R1',3780],['S1',3720],['S2',3650]],H=[],prev=null,atr=null,bars1=[];
+/*LOGIC*/
+function aroon(b,n){n=n||14;if(!b||b.length<n+1)return null;var w=b.slice(-(n+1)),hi=0,lo=0;for(var i=1;i<w.length;i++){if(w[i].high>=w[hi].high)hi=i;if(w[i].low<=w[lo].low)lo=i}return{up:100*(n-(n-hi))/n,down:100*(n-(n-lo))/n}}
+function aroonLabel(u,d){if(u>70&&d<30)return{k:'up',t:'Uptrend: buyers in control'};if(d>70&&u<30)return{k:'dn',t:'Downtrend: sellers in control'};return{k:'none',t:'No clear trend: wait'}}
+var aroonNote="Aroon confirms a trend that's already running, but it can't predict sudden spikes.";
+var SIG_THR=1,SIG_CONF=3,SIG_NAME='Momentum (30s-weighted, 1-10 min)';/* blend score: each window's % move / its own trigger 0.02% x sqrt(window/10min), weighted; BUY >= +1, SELL <= -1; held until |score| < 0.5; a change must repeat SIG_CONF ticks */
+var SIG_W=[{ms:30000,w:0.4},{ms:60000,w:0.2},{ms:120000,w:0.15},{ms:300000,w:0.15},{ms:600000,w:0.1}];
+function sigThr(ms){return 0.02*Math.sqrt(ms/600000)}
+function sigTol(ms){return Math.max(10000,ms*0.25)}
+function sigBase(H,now,ms,tol){var t=now-ms,b=null;for(var i=0;i<H.length;i++){if(H[i][0]<=t)b=H[i];else break}return b&&now-b[0]<=ms+tol?b:null}
+function sigScore(H,now,m){var sc=0,parts=SIG_W.map(function(x){var b=sigBase(H,now,x.ms,sigTol(x.ms)),p=b?(m/b[1]-1)*100:0,z=p/sigThr(x.ms);sc+=x.w*z;return{ms:x.ms,w:x.w,p:p,z:z}});return{score:sc,parts:parts}}
+function sigRaw(p,thr,cur){var b=thr/2;if(cur=='BUY'&&p>=b)return 'BUY';if(cur=='SELL'&&p<=-b)return 'SELL';return p>=thr?'BUY':p<=-thr?'SELL':'WAIT'}
+function sigStep(st,p,thr){var r=sigRaw(p,thr,st.s);if(r==st.s)return{s:st.s,c:null,n:0};var n=st.c==r?st.n+1:1;return n>=SIG_CONF?{s:r,c:null,n:0}:{s:st.s,c:r,n:n}}
+/*ENDLOGIC*/
+var API='https://biquote.io/api/XAUUSD',LV=[['R2',3805],['R1',3780],['S1',3720],['S2',3650]],H=[],prev=null,atr=null,bars1=[],LS=0,SG={s:'WAIT',c:null,n:0},AR=null;
 function $(i){return document.getElementById(i)}
 function f(x){return x.toFixed(2)}
 function at(ms){var t=Date.now()-ms,b=null;for(var i=0;i<H.length;i++){if(H[i][0]<=t)b=H[i];else break}return b}
@@ -69,6 +84,12 @@ async function candles(){try{var a=(await j(API+'/ohlc?interval=1m&limit=100')).
  var c=(await j(API+'/ohlc?interval=5m&limit=16')).bars.slice().reverse(),tr=[];
  for(var i=1;i<c.length;i++){var p=c[i-1].close;tr.push(Math.max(c[i].high-c[i].low,Math.abs(c[i].high-p),Math.abs(c[i].low-p)))}
  tr=tr.slice(-14);atr=tr.reduce(function(s,x){return s+x},0)/tr.length;draw()}catch(e){}}
+function partsOut(P){var e=$('parts');if(!e)return;var nm={30000:'30s',60000:'1m',120000:'2m',300000:'5m',600000:'10m'};e.innerHTML=P.map(function(x){var c=x.p>0?'up':x.p<0?'dn':'mu';return '<span class="'+c+'">'+nm[x.ms]+' '+(x.p>0?'▲':x.p<0?'▼':'–')+Math.abs(x.p).toFixed(3)+'</span>'}).join('')}
+function arr(){var c=$('arc');if(!AR){c.style.display='none';return}c.style.display='block';
+ $('arl').innerHTML=[['5-minute',AR.m5],['1-hour',AR.h1]].map(function(r){var a=r[1];if(!a)return '<div class="lv"><span>'+r[0]+'</span><span class="mu">not enough data yet</span></div>';var l=aroonLabel(a.up,a.down);
+  return '<div class="ar"><div class="ah"><b>'+r[0]+'</b><span class="up">Up '+Math.round(a.up)+'</span><span class="dn">Down '+Math.round(a.down)+'</span></div><div class="at '+l.k+'">'+l.t+'</div></div>'}).join('')}
+var ALb=false;
+async function aroonLoad(){if(ALb)return;ALb=true;try{var r=await Promise.all(['5m','1h'].map(function(iv){return j(API+'/ohlc?interval='+iv+'&limit=40').then(function(d){return aroon(d.bars.slice().reverse(),14)}).catch(function(){return null})}));AR={m5:r[0],h1:r[1]};arr()}catch(e){}ALb=false}
 function draw(){var cv=$('ch');if(!cv||!cv.clientWidth)return;var dpr=window.devicePixelRatio||1,W=Math.round(cv.clientWidth*dpr),Hh=Math.round(cv.clientHeight*dpr);if(cv.width!=W||cv.height!=Hh){cv.width=W;cv.height=Hh}
  var g=cv.getContext('2d');g.clearRect(0,0,W,Hh);if(bars1.length<2)return;
  var v=bars1.slice(-100).map(function(b){return b.close});if(prev!=null)v.push(prev);
@@ -85,8 +106,8 @@ async function tick(){try{var q=await j(API),m=q.mid,now=Date.now();H.push([now,
  $('chg').innerHTML='<span class="'+(q.dayDiffPercent>=0?'up':'dn')+'">'+(q.dayDiffPercent>=0?'+':'')+q.dayDiffPercent.toFixed(2)+'% today</span> · bid '+f(q.bid)+' / ask '+f(q.ask);
  $('st').textContent=q.stale||q.marketState!=='open'?'· '+(q.marketState||'stale'):'· live';
  $('hl').textContent=f(q.high)+' / '+f(q.low);
- var b10=at(600000),p10=b10?(m/b10[1]-1)*100:0,s=p10>=0.02?'BUY':p10<=-0.02?'SELL':'WAIT';
- $('sig').className='badge '+s;$('sig').textContent=s;var h1=bars1.length>60?(m/bars1[bars1.length-61].close-1)*100:null,tw=h1==null?0:(s=='BUY'?(h1>0?1:-1):(h1<0?1:-1));$('str').innerHTML=s=='WAIT'?'':(Math.abs(p10)>=0.04&&tw>0?'<span class="up">💪 STRONG</span>':'<span class="WAITc">〰 WEAK</span>')+(h1==null?'':' <span class="mu">· 1h '+(h1>=0?'+':'')+h1.toFixed(2)+'%</span>');$('m10').innerHTML='<span class="'+(p10>=0?'up':'dn')+'">'+(p10>=0?'+':'')+p10.toFixed(3)+'%</span>';
+ var SS=sigScore(H,now,m);LS=SS.score;SG=sigStep(SG,LS,SIG_THR);var s=SG.s;
+ $('sig').className='badge '+s;$('sig').textContent=s;var h1=bars1.length>60?(m/bars1[bars1.length-61].close-1)*100:null,tw=h1==null?0:(s=='BUY'?(h1>0?1:-1):(h1<0?1:-1));$('str').innerHTML=s=='WAIT'?'':(Math.abs(LS)>=2&&tw>0?'<span class="up">💪 STRONG</span>':'<span class="WAITc">〰 WEAK</span>')+(h1==null?'':' <span class="mu">· 1h '+(h1>=0?'+':'')+h1.toFixed(2)+'%</span>');$('m10').innerHTML='<span class="'+(LS>=0?'up':'dn')+'">'+(LS>=0?'+':'')+LS.toFixed(2)+'</span>';partsOut(SS.parts);
  var b2=at(120000),p2=b2?(m/b2[1]-1)*100:0,k=$('spk');
  if(Math.abs(p2)>=0.2){k.style.display='block';k.className='spike '+(p2>0?'BUY':'SELL');k.textContent=(p2>0?'▲ SPIKE UP ':'▼ SPIKE DOWN ')+p2.toFixed(2)+'% / 2 min'}else k.style.display='none';var A=$('arr');if(Math.abs(p2)>=0.2){A.textContent=p2>0?'▲':'▼';A.className=p2>0?'arr-up':'arr-dn'}else{A.textContent='';A.className=''}
  if(atr){var d=1.5*atr;$('atr').innerHTML=f(d)+'<div class="mu">long '+f(m-d)+' · short '+f(m+d)+'</div>'}
@@ -103,9 +124,9 @@ tap($('bB'),function(){add(1)});tap($('bS'),function(){add(-1)});tap($('bC'),fun
 $('pos').addEventListener('click',function(e){var x=e.target.closest('[data-x]');if(x){E.splice(+x.dataset.x,1);sv();pos()}});
 function pos(){var b=$('pos'),t=$('tpx'),R=$('rev');document.body.classList.toggle('inpos',E.length>0);t.style.display='none';R.textContent='';
  if(!E.length||prev==null){b.style.display='none';return}
- var m=prev,st=atr?1.5*atr:m*0.003,b2=at(120000),mv2=b2?(m/b2[1]-1)*100:0;b.style.display='block';
+ var m=prev,st=atr?1.5*atr:m*0.003;b.style.display='block';
  b.innerHTML=E.map(function(x,i){var d=x.d,tp1=x.p+d*st,lv=LV.map(function(l){return l[1]}).filter(function(v){return d>0?v>tp1:v<tp1}).sort(function(a,c){return d>0?a-c:c-a}),tp2=lv.length?lv[0]:x.p+d*2*st,sl=x.p*(1-d*0.0005),pt=(m-x.p)*d,
-  w='',wc='mu';if(d*(m-sl)<=0){w='⛔ STOP LOSS';wc='dn'}else if(d*(m-tp2)>=0){w='✅ TAKE ALL (TP2)';wc='up'}else if(d*(m-tp1)>=0){w='💰 TAKE PROFIT (TP1)';wc='up'}else if(d*mv2<=-0.02){w='↘ AGAINST YOU';wc='dn'}else if(pt>0&&((d>0&&$('sig').textContent==='SELL')||(d<0&&$('sig').textContent==='BUY'))){w='⚠ SECURE PROFIT';wc='WAITc'}else if(d*mv2>=0.02){w='↗ YOUR WAY';wc='up'}else w='→ Flat';
+  w='',wc='mu';if(d*(m-sl)<=0){w='⛔ STOP LOSS';wc='dn'}else if(d*(m-tp2)>=0){w='✅ TAKE ALL (TP2)';wc='up'}else if(d*(m-tp1)>=0){w='💰 TAKE PROFIT (TP1)';wc='up'}else if(d*LS<=-SIG_THR){w='↘ AGAINST YOU';wc='dn'}else if(pt>0&&((d>0&&$('sig').textContent==='SELL')||(d<0&&$('sig').textContent==='BUY'))){w='⚠ SECURE PROFIT';wc='WAITc'}else if(d*LS>=SIG_THR){w='↗ YOUR WAY';wc='up'}else w='→ Flat';
   return '<div class="ent"><div class="el"><b class="'+(d>0?'up':'dn')+'">'+(d>0?'BUY':'SELL')+' #'+(i+1)+'</b> @ '+f(x.p)+'<div class="mu">TP1 '+f(tp1)+' · TP2 '+f(tp2)+' · SL '+f(sl)+'</div></div><div class="ew '+wc+(w.charAt(0)==='→'?'':' bl')+'">'+w+'</div><div class="en '+(pt>=0?'up':'dn')+'">'+(pt>=0?'+':'')+f(pt)+'<div class="mu">'+(pt>=0?'+':'')+(pt/x.p*100).toFixed(3)+'%</div></div><button class="ex" data-x="'+i+'">✕</button></div>'}).join('')}
-candles().then(tick);setInterval(tick,1500);setInterval(candles,60000);
+candles().then(tick);aroonLoad();setInterval(tick,1500);setInterval(candles,60000);setInterval(aroonLoad,15000);
 </script></body></html>
