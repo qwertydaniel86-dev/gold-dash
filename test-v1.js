@@ -1,7 +1,7 @@
 // node test-v1.js : tests the pure logic block (/*LOGIC*/ ... /*ENDLOGIC*/) of index.html (v1)
 var fs=require('fs'),assert=require('assert'),src=fs.readFileSync(__dirname+'/index.html','utf8');
 var m=src.match(/\/\*LOGIC\*\/([\s\S]*?)\/\*ENDLOGIC\*\//);assert(m,'logic block');
-var L=new Function(m[1]+';return{SIG_THR,SIG_CONF,SIG_W,SIG_NAME,sigThr,sigTol,sigBase,sigScore,sigStep,sigRaw,aroonSigText,aroonSeg,aroonRow,aroon,aroonLabel,aroonNote}')(),n=0;
+var L=new Function(m[1]+';return{SIG_THR,SIG_CONF,SIG_W,SIG_NAME,sigThr,sigTol,sigBase,sigScore,sigStep,sigRaw,aroonSigText,aroonSeg,aroonRow,aroon,aroonLabel,aroonNote,swAtr,swZones,swInZone,swFlipBars,znTc,znMarkMitig,znLiveOne,znDist,znAtOrReacting,znBlocked,znRange,znPack,znDecide,ZN_NEAR_ATR,ZN_REACT_SEC}')(),n=0;
 function t(name,fn){fn();n++;console.log('ok',name)}
 // Aroon(14)
 function bars(hs,ls){return hs.map(function(h,i){return{high:h,low:ls[i]}})}
@@ -64,5 +64,134 @@ t('aroonRow: 5m and 1h from AR, dashes when AR is null or half-loaded',function(
 t('aroonSigText: bold card text per timeframe (BUY / SELL / WAIT, dash when no data)',function(){assert.strictEqual(L.aroonSigText({up:100,down:0}),'Aroon signal: BUY');assert.strictEqual(L.aroonSigText({up:0,down:100}),'Aroon signal: SELL');assert.strictEqual(L.aroonSigText({up:50,down:50}),'Aroon signal: WAIT');assert.strictEqual(L.aroonSigText({up:70,down:29}),'Aroon signal: WAIT');assert.strictEqual(L.aroonSigText({up:71,down:30}),'Aroon signal: WAIT');assert.strictEqual(L.aroonSigText({up:71,down:29}),'Aroon signal: BUY');assert.strictEqual(L.aroonSigText({up:29,down:71}),'Aroon signal: SELL');assert.strictEqual(L.aroonSigText({up:30,down:71}),'Aroon signal: WAIT');assert.strictEqual(L.aroonSigText(null),'Aroon signal: –')});
 t('aroon row never shows UP/DOWN tags any more',function(){['m5','h1'].forEach(function(k){assert(['BUY','SELL','WAIT','–'].indexOf(L.aroonRow({m1:{up:100,down:0},m5:{up:0,down:100},h1:{up:50,down:50}})[k].tag)>=0)});assert.strictEqual(L.aroonRow({m5:{up:100,down:0},h1:{up:0,down:100}}).m5.tag,'BUY');assert.strictEqual(L.aroonRow({m5:{up:100,down:0},h1:{up:0,down:100}}).h1.tag,'SELL')});
 
-t('v1 page: label, 15s Aroon, old wording gone, data credit kept',function(){assert(src.indexOf('Momentum (30s-weighted, 1-10 min)')>0);assert(!/10-min move|Momentum \(10|Momentum \(2-min|Momentum \(30-sec/i.test(src));assert(/setInterval\(aroonLoad,15000\)/.test(src));assert(/Data: biquote\.io/.test(src));assert(/Aroon signal: /.test(src)&&/id="arow"/.test(src)&&/id="arc"/.test(src)&&/id="parts"/.test(src))});
+t('v1 page: label, 15s Aroon, old wording gone, NFA, feed origin hidden',function(){
+ assert(src.indexOf('Momentum (30s-weighted, 1-10 min)')>0);assert(!/10-min move|Momentum \(10|Momentum \(2-min|Momentum \(30-sec/i.test(src));assert(/setInterval\(aroonLoad,15000\)/.test(src));
+ assert(/not financial advice/i.test(src));assert(/var BASE=atob\(/.test(src));assert(!/var API='https:/.test(src));
+ assert(/Aroon signal: /.test(src)&&/id="arow"/.test(src)&&/id="arc"/.test(src)&&/id="parts"/.test(src))});
+
+// ---- demand / supply zones (v3 order-block rules) + v1 filter ----
+function swBar(t,o,h,l,c){return {t:t,open:o,high:h,low:l,close:c}}
+function padFlat(n,t0){var a=[],i;for(i=0;i<n;i++)a.push(swBar((t0||0)+i,10,11,9,10));return a}
+t('swZones: down bar then impulsive close above it is a demand box',function(){
+ var zbars=padFlat(16);zbars.push(swBar(16,10,10.2,8,8.5));zbars.push(swBar(17,8.6,14,8.6,13.5));
+ var zs=L.swZones(zbars,L.swAtr(zbars,14),1,zbars.length-1);
+ var dem=zs.filter(function(z){return z.k==='DEMAND'&&!z.broken});
+ assert(dem.length>=1);assert.strictEqual(dem[dem.length-1].lo,8);assert.strictEqual(dem[dem.length-1].hi,10.2)});
+t('swZones: up bar then impulsive close below it is a supply box (BUY/SELL mirror)',function(){
+ var sbars=padFlat(16);sbars.push(swBar(16,10,12,9.8,11.5));sbars.push(swBar(17,11.4,11.4,6,6.5));
+ var zs=L.swZones(sbars,L.swAtr(sbars,14),1,sbars.length-1);
+ var sup=zs.filter(function(z){return z.k==='SUPPLY'&&!z.broken});
+ assert(sup.length>=1);assert.strictEqual(sup[sup.length-1].hi,12);assert.strictEqual(sup[sup.length-1].lo,9.8)});
+t('swZones: a close through the far side breaks the zone',function(){
+ var zbars=padFlat(16);zbars.push(swBar(16,10,10.2,8,8.5));zbars.push(swBar(17,8.6,14,8.6,13.5));
+ zbars.push(swBar(18,13,13,7.5,7.8)); // close under demand lo=8
+ var zs=L.swZones(zbars,L.swAtr(zbars,14),1,zbars.length-1);
+ var dem=zs.filter(function(z){return z.k==='DEMAND'&&z.i===16});
+ assert(dem.length>=1);assert.strictEqual(dem[dem.length-1].broken,true);assert.strictEqual(dem[dem.length-1].broke_i,18)});
+t('swInZone: a wick into the box counts as a touch; a gap away does not',function(){
+ assert(L.swInZone(swBar(1,11,11,10,10.5),{lo:8,hi:10}));
+ assert(!L.swInZone(swBar(1,12,13,11,12),{lo:8,hi:10}))});
+t('znMarkMitig: first overlap after birth is the touch; earlier bars do not count',function(){
+ var zbars=padFlat(16);zbars.push(swBar(16,10,10.2,8,8.5));zbars.push(swBar(17,8.6,14,8.6,13.5));
+ zbars.push(swBar(18,13,13.2,12,12.5)); // no touch
+ zbars.push(swBar(19,12,12.2,9,11)); // wick into 8–10.2
+ var zs=L.swZones(zbars,L.swAtr(zbars,14),1,17);
+ assert(zs.some(function(z){return z.k==='DEMAND'&&!z.broken}));
+ var dem=zs.filter(function(z){return z.k==='DEMAND'&&!z.broken})[0];
+ L.znMarkMitig([dem],zbars);
+ assert.strictEqual(dem.mitig_i,19);assert.strictEqual(dem.mitig_t,19)});
+t('zones flip: demand/supply boxes swap and high/low flip around a constant',function(){
+ var C=8000,zbars=padFlat(16);zbars.push(swBar(16,10,10.2,8,8.5));zbars.push(swBar(17,8.6,14,8.6,13.5));
+ var zs=L.swZones(zbars,L.swAtr(zbars,14),1,zbars.length-1);
+ var fl=L.swFlipBars(zbars,C),zf=L.swZones(fl,L.swAtr(fl,14),1,fl.length-1);
+ assert.strictEqual(zs.length,zf.length);
+ zs.forEach(function(z,ix){var m=zf[ix];assert.strictEqual(m.k,z.k==='DEMAND'?'SUPPLY':'DEMAND');assert.ok(Math.abs(m.lo-(C-z.hi))<1e-9);assert.ok(Math.abs(m.hi-(C-z.lo))<1e-9)})});
+
+t('znAtOrReacting: BUY only at a still-fresh demand; SELL mirrors at supply',function(){
+ var dem={k:'DEMAND',lo:8,hi:10,i:1,born:2,broken:false,mitig_t:null};
+ var bar={t:5,open:9,high:9.5,low:8.5,close:9};
+ assert(L.znAtOrReacting('BUY',9,bar,[dem],2,5,10));
+ // already mitigated earlier, and price has left the 15m window → not fresh, not reacting
+ dem={k:'DEMAND',lo:8,hi:10,i:1,born:2,broken:false,mitig_t:5,mitig_i:5};
+ assert.strictEqual(L.znAtOrReacting('BUY',12,bar,[dem],2,5+L.ZN_REACT_SEC+1,10),null);
+ // reacting: first touch 600s ago, still within 1 ATR
+ dem={k:'DEMAND',lo:8,hi:10,i:1,born:2,broken:false,mitig_t:1000,mitig_i:5};
+ assert(L.znAtOrReacting('BUY',11,{t:1600,open:11,high:11.2,low:10.8,close:11},[dem],2,1600,10));
+ // too far from the zone
+ assert.strictEqual(L.znAtOrReacting('BUY',15,{t:1600,open:15,high:15,low:15,close:15},[dem],2,1600,10),null);
+ // SELL at fresh supply
+ var sup={k:'SUPPLY',lo:20,hi:22,i:1,born:2,broken:false,mitig_t:null};
+ assert(L.znAtOrReacting('SELL',21,{t:5,open:21,high:21.5,low:20.5,close:21},[sup],2,5,10));
+ assert.strictEqual(L.znAtOrReacting('BUY',21,{t:5,open:21,high:21.5,low:20.5,close:21},[sup],2,5,10),null)});
+
+t('znBlocked: no BUY when supply is within 1 ATR above; SELL mirrors',function(){
+ var sup={k:'SUPPLY',lo:102,hi:104,i:1,born:2,broken:false};
+ assert(L.znBlocked('BUY',100,[sup],3,10)); // 102 is 2 <= 1*3 above
+ assert.strictEqual(L.znBlocked('BUY',100,[sup],1,10),null); // 2 > 1 ATR
+ var dem={k:'DEMAND',lo:96,hi:98,i:1,born:2,broken:false};
+ assert(L.znBlocked('SELL',100,[dem],3,10));
+ assert.strictEqual(L.znBlocked('SELL',100,[dem],1,10),null);
+ // already inside the opposite zone also blocks
+ assert(L.znBlocked('BUY',103,[sup],3,10));
+ assert.strictEqual(L.znBlocked('BUY',100,[dem],3,10),null); // demand below does not block BUY
+});
+
+t('znDecide: toggle off passes the v1 signal through',function(){
+ var pack={zones:[],atrNow:2,endI:10};
+ assert.strictEqual(L.znDecide('BUY',9,pack,null,5,false).s,'BUY');
+ assert.strictEqual(L.znDecide('SELL',9,pack,null,5,false).s,'SELL');
+ assert.strictEqual(L.znDecide('WAIT',9,pack,null,5,false).s,'WAIT');
+ assert.strictEqual(L.znDecide('BUY',9,pack,null,5,false).why,'')});
+t('znDecide: missing 15m data waits instead of passing a raw BUY',function(){
+ var r=L.znDecide('BUY',9,null,null,5,true);
+ assert.strictEqual(r.s,'WAIT');assert(/15m/.test(r.why))});
+t('znDecide (c): BUY only at fresh demand with no nearby supply; SELL is the exact mirror',function(){
+ var dem={k:'DEMAND',lo:8,hi:10,i:1,born:2,broken:false,mitig_t:null};
+ var pack={zones:[dem],atrNow:2,endI:10};
+ var bar={t:5,open:9,high:9.5,low:8.5,close:9};
+ var r=L.znDecide('BUY',9,pack,bar,5,true);
+ assert.strictEqual(r.s,'BUY');assert.strictEqual(r.why,'BUY at demand 8–10');
+ var r2=L.znDecide('BUY',20,pack,{t:5,open:20,high:20,low:20,close:20},5,true);
+ assert.strictEqual(r2.s,'WAIT');assert(/not at a fresh demand zone/.test(r2.why));
+ var C=100;
+ var packS={zones:L.swFlipBars?null:null};
+ var sup={k:'SUPPLY',lo:C-10,hi:C-8,i:1,born:2,broken:false,mitig_t:null}; // 90–92
+ var pack2={zones:[sup],atrNow:2,endI:10};
+ var barS={t:5,open:C-9,high:C-8.5,low:C-9.5,close:C-9};
+ var rS=L.znDecide('SELL',C-9,pack2,barS,5,true);
+ assert.strictEqual(rS.s,'SELL');assert.strictEqual(rS.why,'SELL at supply 90–92');
+ // blocked by opposite zone even when at a fresh zone
+ var nearSup={k:'SUPPLY',lo:11,hi:12,i:3,born:4,broken:false,mitig_t:null};
+ var pack3={zones:[dem,nearSup],atrNow:2,endI:10};
+ var rB=L.znDecide('BUY',9,pack3,bar,5,true);
+ assert.strictEqual(rB.s,'WAIT');assert(/supply 11–12 is within 1 ATR above/.test(rB.why));
+ var nearDem={k:'DEMAND',lo:C-12,hi:C-11,i:3,born:4,broken:false,mitig_t:null}; // 88–89
+ var pack4={zones:[sup,nearDem],atrNow:2,endI:10};
+ var rBS=L.znDecide('SELL',C-9,pack4,barS,5,true);
+ assert.strictEqual(rBS.s,'WAIT');assert(/demand 88–89 is within 1 ATR below/.test(rBS.why));
+ // full flip of decide: flipping price and zones swaps BUY/SELL and the reason text
+ var flipZ=function(z){return{k:z.k==='DEMAND'?'SUPPLY':'DEMAND',lo:C-z.hi,hi:C-z.lo,i:z.i,born:z.born,broken:z.broken,mitig_t:z.mitig_t,broke_i:z.broke_i}};
+ function flipBar(b){return{t:b.t,open:C-b.open,high:C-b.low,low:C-b.high,close:C-b.close}}
+ function flipSide(x){return x==='BUY'?'SELL':x==='SELL'?'BUY':x}
+ var cases=[['BUY',9,pack,bar],['BUY',20,pack,{t:5,open:20,high:20,low:20,close:20}],['BUY',9,pack3,bar]];
+ cases.forEach(function(c){
+  var A=L.znDecide(c[0],c[1],c[2],c[3],5,true);
+  var B=L.znDecide(flipSide(c[0]),C-c[1],{zones:(c[2].zones||[]).map(flipZ),atrNow:c[2].atrNow,endI:c[2].endI},flipBar(c[3]),5,true);
+  assert.strictEqual(B.s,flipSide(A.s));
+  assert.strictEqual(B.kind,A.kind);
+  var exp=A.why.replace(/BUY/g,'#S#').replace(/SELL/g,'BUY').replace(/#S#/g,'SELL').replace(/demand/g,'#D#').replace(/supply/g,'demand').replace(/#D#/g,'supply').replace(/\babove\b/g,'#A#').replace(/\bbelow\b/g,'above').replace(/#A#/g,'below').replace(/(\d+)–(\d+)/g,function(_,a,b){return (C-+b)+'–'+(C-+a)});
+  assert.strictEqual(B.why,exp);
+ });
+});
+t('znRange rounds the box for the reason line',function(){assert.strictEqual(L.znRange({lo:3610.4,hi:3614.6}),'3610–3615')});
+
+t('v1 page: zone toggle, reason line, demand/supply colours, filter wired',function(){
+ assert(/id="znOn"/.test(src)&&/id="sigwhy"/.test(src));
+ assert(/Use demand\/supply in the signal/.test(src));
+ assert(/#00ffc8/.test(src)&&/#ff4fa3/.test(src));
+ assert(/function znDecide/.test(src)&&/ZPACK=znPack/.test(src));
+ assert(/localStorage\.gdZ1/.test(src));
+ assert(/interval=15m/.test(src));
+ assert(/When the zone filter is on/.test(src))});
+
 console.log(n+' tests passed');

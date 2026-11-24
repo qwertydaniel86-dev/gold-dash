@@ -1,0 +1,62 @@
+Gold Dash v1 — demand/supply zone filter backtest
+=================================================
+Offline. Yahoo GC=F, 4,605 15m bars and 13,775 5m bars,
+2026-09-13 22:00 UTC to 2026-11-20 22:00 UTC
+(2026-09-14 06:00 PHT to 2026-11-21 06:00 PHT).
+70/30 split at 2026-10-31 12:28 UTC / 2026-10-31 20:28 PHT.
+
+Method
+- v1 live signal is 30s–10m mid-price momentum on 1.5s ticks.
+  No ticks were on disk, so the mid path is linear close-to-close
+  inside each 5m bar at 1.5s steps. This is an approximation.
+- Zones use v3 15m order-block rules (not fair-value gaps).
+  Touch / mitigation uses 5m wicks. A zone breaks on a 15m close
+  through the far side.
+- $0.30 spread, 0.01 lot ($1 P/L per $1), one position at a time.
+  Exits walk 5m bars; stop is counted first if both are hit.
+- SL and TP match v1's paper card: SL = 0.05% of entry,
+  TP1 = 1.5 × 5m ATR(14). (The on-page "Stop (1.5×ATR)" figure
+  is the TP1 distance, not the stop.)
+- In this window, median SL ≈ $2.08 and median TP1 ≈ $6.07
+  (median R:R ≈ 2.9). Gold fell from about 4372 to 3515.
+
+Primary results — exit at TP1
+
+Unchanged v1 momentum
+  first 70%  n=1857           wr=25.9%  net=$-464.1  BUY n=914 wr=23.9% net=$-393.3; SELL n=943 wr=27.9% net=$-70.9
+  last  30%  n=900            wr=22.7%  net=$-269.1  BUY n=450 wr=18.9% net=$-297.3; SELL n=450 wr=26.4% net=$28.3
+
+(a) v1 only at / reacting from a fresh zone
+  first 70%  n=299            wr=25.4%  net=$-54.9   BUY n=149 wr=19.5% net=$-108.5; SELL n=150 wr=31.3% net=$53.5
+  last  30%  n=130            wr=20.0%  net=$-33.0   BUY n=70  wr=15.7% net=$-40.1;  SELL n=60  wr=25.0% net=$7.1
+
+(b) v1, skip if the opposite zone is within 1 ATR
+  first 70%  n=1272           wr=26.4%  net=$-352.1  BUY n=693 wr=23.5% net=$-355.6; SELL n=579 wr=29.9% net=$3.6
+  last  30%  n=683            wr=22.1%  net=$-233.2  BUY n=354 wr=19.5% net=$-197.4; SELL n=329 wr=24.9% net=$-35.7
+
+(c) both (a) and (b)   <-- chosen, least-bad at TP1
+  first 70%  n=147            wr=24.5%  net=$-50.4   BUY n=74  wr=18.9% net=$-50.9;  SELL n=73  wr=30.1% net=$0.5
+  last  30%  n=78             wr=24.4%  net=$25.8    BUY n=42  wr=26.2% net=$29.0;   SELL n=36  wr=22.2% net=$-3.1
+
+(d) rejection candle at a fresh zone + 1H Aroon (ignores v1 momentum)
+  first 70%  n=18  *small*    wr=33.3%  net=$11.7    BUY n=9   wr=0.0%  net=$-21.8;  SELL n=9   wr=66.7% net=$33.5
+  last  30%  n=10  *small*    wr=10.0%  net=$-13.8   BUY n=4   wr=0.0%  net=$-9.3;   SELL n=6   wr=16.7% net=$-4.5
+
+Sensitivity — same entries, hold for TP2 (next Nov 19 key level, or 3×ATR)
+
+Unchanged v1   first 70% n=648 wr=10.8% net=$126.9;  last 30% n=331 wr=10.0% net=$226.2
+               BUY lost on both halves; SELL made all the profit (gold was in a crash).
+(a)            first 70% n=238 wr=10.9% net=$69.8;   last 30% n=115 wr=7.8%  net=$-40.6
+(b)            first 70% n=616 wr=11.0% net=$41.6;   last 30% n=341 wr=7.9%  net=$26.5
+(c)            first 70% n=133 wr=14.3% net=$101.8;  last 30% n=70  wr=12.9% net=$49.4
+               BUY and SELL both net positive on both halves.
+(d)            first 70% n=17 *small* wr=0% net=$-40.9; last 30% n=10 *small* wr=0% net=$-22.5
+
+Pick
+At the v1 paper target (TP1), no variant is profitable on both halves.
+(a)(b)(c) all lose less than unfiltered v1 on both halves only because they
+trade a losing system less often. (d) is too small to trust, and every BUY lost.
+(c) is the least-bad at TP1 (only the first 70% loses, last 30% is slightly up)
+and is the only variant that, if you hold for TP2, is profitable on both
+halves and on both BUY and SELL. Implemented on this branch, behind a toggle
+(default on). This is still paper only.
