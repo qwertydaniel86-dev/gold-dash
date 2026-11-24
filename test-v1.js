@@ -1,7 +1,7 @@
 // node test-v1.js : tests the pure logic block (/*LOGIC*/ ... /*ENDLOGIC*/) of index.html (v1)
 var fs=require('fs'),assert=require('assert'),src=fs.readFileSync(__dirname+'/index.html','utf8');
 var m=src.match(/\/\*LOGIC\*\/([\s\S]*?)\/\*ENDLOGIC\*\//);assert(m,'logic block');
-var L=new Function(m[1]+';return{SIG_THR,SIG_CONF,SIG_W,SIG_NAME,sigThr,sigTol,sigBase,sigScore,sigStep,sigRaw,aroonSigText,aroonSeg,aroonRow,aroon,aroonLabel,aroonNote,swAtr,swZones,swInZone,swFlipBars,znTc,znMarkMitig,znLiveOne,znDist,znAtOrReacting,znBlocked,znRange,znPack,znDecide,ZN_NEAR_ATR,ZN_REACT_SEC}')(),n=0;
+var L=new Function(m[1]+';return{SIG_THR,SIG_CONF,SIG_W,SIG_NAME,sigThr,sigTol,sigBase,sigScore,sigStep,sigRaw,aroonSigText,aroonSeg,aroonRow,aroon,aroonLabel,aroonNote,swAtr,swZones,swInZone,swFlipBars,znTc,znMarkMitig,znLiveOne,znDist,znAtOrReacting,znBlocked,znRange,znPack,znDecide,ZN_NEAR_ATR,ZN_REACT_SEC,PL_MS,PL_SL,PL_LIM_ATR,PL_LIM_FB,plPhtHm,plPhtTag,plUpdatedText,plBucket,plNext,plShouldBuild,plEntry,plSl,plSt,plTp,plLimit,plTriggers,plBuild,plCopyText,plHtml}')(),n=0;
 function t(name,fn){fn();n++;console.log('ok',name)}
 // Aroon(14)
 function bars(hs,ls){return hs.map(function(h,i){return{high:h,low:ls[i]}})}
@@ -193,5 +193,157 @@ t('v1 page: zone toggle, reason line, demand/supply colours, filter wired',funct
  assert(/localStorage\.gdZ1/.test(src));
  assert(/interval=15m/.test(src));
  assert(/When the zone filter is on/.test(src))});
+
+
+// ---- 2-minute BUY/SELL plan card ----
+t('plan clock: 2-minute buckets, PHT 24-hour time, and the updated line',function(){
+ assert.strictEqual(L.PL_MS,120000);
+ var t=Date.UTC(2026,10,24,7,58,30); // 15:58:30 PHT
+ assert.strictEqual(L.plBucket(t),Date.UTC(2026,10,24,7,58,0));
+ assert.strictEqual(L.plNext(t),Date.UTC(2026,10,24,8,0,0));
+ assert.strictEqual(L.plShouldBuild(null,t),true);
+ assert.strictEqual(L.plShouldBuild(L.plBucket(t),t),false);
+ assert.strictEqual(L.plShouldBuild(L.plBucket(t),L.plBucket(t)+119999),false);
+ assert.strictEqual(L.plShouldBuild(L.plBucket(t),Date.UTC(2026,10,24,8,0,0)),true);
+ assert.strictEqual(L.plShouldBuild(L.plBucket(t)-L.PL_MS,t),true);
+ assert.strictEqual(L.plPhtHm(Date.UTC(2026,10,24,7,58,0)),'15:58');
+ assert.strictEqual(L.plPhtHm(Date.UTC(2026,10,21,12,45,0)),'20:45');
+ assert.strictEqual(L.plPhtHm(Date.UTC(2026,10,21,16,0,0)),'00:00');
+ assert.strictEqual(L.plPhtHm(Date.UTC(2026,10,21,16,5,0)),'00:05');
+ assert.strictEqual(L.plPhtTag(Date.UTC(2026,10,24,7,58,0)),'15:58 PHT');
+ assert.strictEqual(L.plUpdatedText(Date.UTC(2026,10,24,7,58,0),Date.UTC(2026,10,24,8,0,0)),'Updated 15:58 PHT · next 16:00');
+ assert.strictEqual(L.plPhtHm(Date.UTC(2026,10,24,7,58,0)/1000),'15:58'); // seconds also ok
+});
+
+t('plEntry uses ask for BUY and bid for SELL; mid is the fallback',function(){
+ assert.strictEqual(L.plEntry('BUY',100,99.8,100.2),100.2);
+ assert.strictEqual(L.plEntry('SELL',100,99.8,100.2),99.8);
+ assert.strictEqual(L.plEntry('BUY',100,null,null),100);
+ assert.strictEqual(L.plEntry('SELL',100,undefined,undefined),100);
+ assert.strictEqual(L.plSl('BUY',100.2),100.2*(1-L.PL_SL));
+ assert.strictEqual(L.plSl('SELL',99.8),99.8*(1+L.PL_SL));
+ assert.strictEqual(L.PL_SL,0.0005);
+ assert.strictEqual(L.plSt(2,100),3);
+ assert.strictEqual(L.plSt(null,100),100*0.003)});
+
+t('plCopyText is a 2-decimal price, ready to paste into MT5',function(){
+ assert.strictEqual(L.plCopyText(3612.4),'3612.40');
+ assert.strictEqual(L.plCopyText(3515),'3515.00');
+ assert.strictEqual(L.plCopyText(L.plSl('BUY',100.2)),(100.2*(1-0.0005)).toFixed(2))});
+
+function zFresh(k,lo,hi){return{k:k,lo:lo,hi:hi,i:1,born:2,broken:false,mitig_t:null,mitig_i:null}}
+t('plLimit: nearest fresh demand top below price, else entry minus 0.5× 5m ATR; SELL mirrors',function(){
+ var atr=2,entryB=100.2,entryS=99.8,mid=100;
+ assert.strictEqual(L.PL_LIM_ATR,2);assert.strictEqual(L.PL_LIM_FB,0.5);
+ // fallback, no zones
+ assert.strictEqual(L.plLimit('BUY',entryB,mid,atr,[],10),entryB-0.5*atr);
+ assert.strictEqual(L.plLimit('SELL',entryS,mid,atr,[],10),entryS+0.5*atr);
+ // zone within 2 ATR
+ var dem=zFresh('DEMAND',96,98),sup=zFresh('SUPPLY',102,104);
+ assert.strictEqual(L.plLimit('BUY',entryB,mid,atr,[dem],10),98);
+ assert.strictEqual(L.plLimit('SELL',entryS,mid,atr,[sup],10),102);
+ // zone too far (>2 ATR) → fallback
+ var farD=zFresh('DEMAND',80,90),farS=zFresh('SUPPLY',110,120);
+ assert.strictEqual(L.plLimit('BUY',entryB,mid,atr,[farD],10),entryB-0.5*atr);
+ assert.strictEqual(L.plLimit('SELL',entryS,mid,atr,[farS],10),entryS+0.5*atr);
+ // already-touched zone is not used
+ var used=zFresh('DEMAND',96,98);used.mitig_t=1;
+ assert.strictEqual(L.plLimit('BUY',entryB,mid,atr,[used],10),entryB-0.5*atr);
+ // nearest of two fresh demand boxes below
+ var d1=zFresh('DEMAND',94,96),d2=zFresh('DEMAND',97,99);
+ assert.strictEqual(L.plLimit('BUY',entryB,mid,atr,[d1,d2],10),99)});
+
+t('plTp: TP1 is 1.5×ATR, TP2 is the next key level or 2× TP1 distance, TP3 is 3× or a nearer fresh opposing zone beyond TP2',function(){
+ var e=100.2,atr=2,st=3; // TP1 dist
+ var t=L.plTp('BUY',e,atr,[90,200],[],10); // 200 is far
+ assert.strictEqual(t.tp1,e+st);
+ assert.strictEqual(t.tp2,200); // next key level beyond TP1
+ // 3× TP1 = 109.2 sits before TP2=200, so TP3 extends one TP1-step past TP2
+ assert.strictEqual(t.tp3,200+st);
+ var t2=L.plTp('BUY',e,atr,[],[],10);
+ assert.strictEqual(t2.tp1,e+st);assert.strictEqual(t2.tp2,e+2*st);assert.strictEqual(t2.tp3,e+3*st);
+ var sup=zFresh('SUPPLY',108,110); // lo=108 is beyond TP2=106.2 and nearer than 109.2
+ var t3=L.plTp('BUY',e,atr,[], [sup],10);
+ assert.strictEqual(t3.tp2,e+2*st);
+ assert.strictEqual(t3.tp3,108);
+ var t4=L.plTp('SELL',99.8,atr,[], [zFresh('DEMAND',90,91.6)],10);
+ assert.strictEqual(t4.tp1,99.8-st);
+ assert.strictEqual(t4.tp2,99.8-2*st);
+ assert.strictEqual(t4.tp3,91.6)});
+
+t('plBuild BUY/SELL are exact mirrors, including bid/ask, zones, and key levels',function(){
+ var now=Date.UTC(2026,10,24,7,58,30),C=8000;
+ var dem=zFresh('DEMAND',96,98),sup=zFresh('SUPPLY',102,104);
+ var opt={side:'BUY',mid:100,bid:99.8,ask:100.2,atr:2,levels:[90,107],zones:[dem,sup],endI:10,nowMs:now,filterOn:true};
+ var A=L.plBuild(opt);
+ assert.strictEqual(A.s,'BUY');
+ assert.strictEqual(A.t0,Date.UTC(2026,10,24,7,58,0));
+ assert.strictEqual(A.t1,Date.UTC(2026,10,24,8,0,0));
+ assert.strictEqual(A.time,'15:58');
+ assert.strictEqual(A.updated,'Updated 15:58 PHT · next 16:00');
+ assert.strictEqual(A.entry,100.2);
+ assert.strictEqual(A.sl,100.2*(1-0.0005));
+ assert.strictEqual(A.tp1,100.2+3);
+ assert.strictEqual(A.tp2,107); // key level between TP1=103.2 and 3×=109.2
+ assert.strictEqual(A.tp3,100.2+9); // no opposing zone between 107 and 109.2
+ assert.strictEqual(A.limit,98);
+ assert(/0\.01 lot split in thirds/.test(A.lot));
+ function flipZ(z){return{k:z.k==='DEMAND'?'SUPPLY':'DEMAND',lo:C-z.hi,hi:C-z.lo,i:z.i,born:z.born,broken:z.broken,mitig_t:z.mitig_t,mitig_i:z.mitig_i}}
+ var B=L.plBuild({side:'SELL',mid:C-100,bid:C-100.2,ask:C-99.8,atr:2,levels:[C-90,C-107],zones:[dem,sup].map(flipZ),endI:10,nowMs:now,filterOn:true});
+ assert.strictEqual(B.s,'SELL');
+ assert.strictEqual(B.entry,C-A.entry);
+ // SL is 0.05% of the fill, so it mirrors in percent, not as a dollar flip around C
+ assert.ok(Math.abs((A.entry-A.sl)/A.entry - (B.sl-B.entry)/B.entry)<1e-12);
+ assert.strictEqual(A.sl,A.entry*(1-L.PL_SL));
+ assert.strictEqual(B.sl,B.entry*(1+L.PL_SL));
+ assert.ok(Math.abs(B.tp1-(C-A.tp1))<1e-9);
+ assert.ok(Math.abs(B.tp2-(C-A.tp2))<1e-9);
+ assert.ok(Math.abs(B.tp3-(C-A.tp3))<1e-9);
+ assert.ok(Math.abs(B.limit-(C-A.limit))<1e-9);
+ assert.strictEqual(B.time,A.time);assert.strictEqual(B.updated,A.updated)});
+
+t('plBuild WAIT: no plan, but nearby fresh zone levels are shown as triggers',function(){
+ var now=Date.UTC(2026,10,24,7,58,0);
+ var dem=zFresh('DEMAND',96,98),sup=zFresh('SUPPLY',102,104);
+ var W=L.plBuild({side:'WAIT',mid:100,bid:99.8,ask:100.2,atr:2,levels:[],zones:[dem,sup],endI:10,nowMs:now,filterOn:true});
+ assert.strictEqual(W.s,'WAIT');
+ assert.strictEqual(W.entry,null);assert.strictEqual(W.sl,null);assert.strictEqual(W.tp1,null);
+ assert.strictEqual(W.time,'15:58');
+ assert(W.triggers&&W.triggers.buy&&W.triggers.sell);
+ assert.strictEqual(W.triggers.buy.hi,98);assert.strictEqual(W.triggers.sell.lo,102);
+ var off=L.plBuild({side:'WAIT',mid:100,bid:99.8,ask:100.2,atr:2,levels:[],zones:[dem,sup],endI:10,nowMs:now,filterOn:false});
+ assert.strictEqual(off.s,'WAIT');
+ assert.strictEqual(off.triggers.buy,null);assert.strictEqual(off.triggers.sell,null);
+ var none=L.plBuild({side:'WAIT',mid:100,bid:99.8,ask:100.2,atr:2,levels:[],zones:[],endI:10,nowMs:now,filterOn:true});
+ assert.strictEqual(none.triggers.buy,null);assert.strictEqual(none.triggers.sell,null)});
+
+t('plHtml: prices, copy buttons, WAIT wording, and the lot split hint',function(){
+ var now=Date.UTC(2026,10,24,7,58,0);
+ var p=L.plBuild({side:'BUY',mid:100,bid:99.8,ask:100.2,atr:2,levels:[],zones:[zFresh('DEMAND',96,98)],endI:10,nowMs:now,filterOn:true});
+ var h=L.plHtml(p);
+ assert(/BUY plan/.test(h)&&/15:58/.test(h));
+ assert(/Updated 15:58 PHT · next 16:00/.test(h));
+ assert(/Buy at/.test(h)&&/Stop loss/.test(h)&&/TP1/.test(h)&&/TP2/.test(h)&&/TP3/.test(h)&&/Buy Limit at/.test(h));
+ assert(/data-copy="100\.20"/.test(h));
+ assert(/data-copy="103\.20"/.test(h)); // TP1
+ assert(/data-copy="98\.00"/.test(h));
+ assert(/0\.01 lot split in thirds/.test(h));
+ assert((h.match(/data-copy=/g)||[]).length>=6); // entry, sl, tp1, tp2, tp3, limit
+ var w=L.plHtml(L.plBuild({side:'WAIT',mid:100,bid:99.8,ask:100.2,atr:2,levels:[],zones:[zFresh('DEMAND',96,98),zFresh('SUPPLY',102,104)],endI:10,nowMs:now,filterOn:true}));
+ assert(/WAIT – no plan/.test(w)||/WAIT – no plan/.test(w));
+ assert(/demand 96–98/.test(w)&&/supply 102–104/.test(w));
+ assert(!/Buy at/.test(w));
+ var w2=L.plHtml(L.plBuild({side:'WAIT',mid:100,bid:99.8,ask:100.2,atr:2,levels:[],zones:[],endI:10,nowMs:now,filterOn:false}));
+ assert(/WAIT – no plan/.test(w2));
+ assert(!/demand /.test(w2)&&!/Buy at/.test(w2))});
+
+t('v1 page: plan card under the signal, 2-minute refresh, relabeled ATR card, NFA, copy buttons',function(){
+ assert(/id="plan"/.test(src));
+ assert(/plShouldBuild/.test(src)&&/PL_MS=120000/.test(src));
+ assert(/TP1 distance \(1\.5×ATR14, 5m\)/.test(src));
+ assert(!/Stop \(1\.5×ATR14, 5m\)/.test(src));
+ assert(/not financial advice/i.test(src));
+ assert(/data-copy/.test(src)||/function plHtml/.test(src));
+ assert(/var BASE=atob\(/.test(src));assert(!/var API='https:/.test(src))});
 
 console.log(n+' tests passed');

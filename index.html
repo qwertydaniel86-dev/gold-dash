@@ -40,25 +40,42 @@ body{padding-top:0}
 #top>.hd,#top>h1{grid-column:1;grid-row:1}
 #pxrow{grid-column:1;grid-row:2/span 8;flex-direction:column;align-items:stretch;gap:4px}
 #top .px{font-size:34px}#pxrow #ch{height:52px;flex:none;width:100%}
-#top>#sig,#top>.btns,#top>#nt,#top>#stats,#top>#parts,#top>#arow,#top>#spk,#top>#fvw,#top>#str{grid-column:2}
+#top>#sig,#top>#sigwhy,#top>.znlab,#top>.btns,#top>#nt,#top>#plan,#top>#stats,#top>#parts,#top>#arow,#top>#spk,#top>#fvw,#top>#str{grid-column:2}
 #top .badge{margin-top:4px}
 body.inpos #top>.hd,body.inpos #top>h1{grid-column:1/-1}
 body.inpos #pxrow{grid-column:1/-1;grid-row:auto;flex-direction:row;align-items:center}
 body.inpos #pxrow #ch{height:46px;flex:1;width:auto}
 body.inpos #top>#sig{grid-column:1}body.inpos #top>.btns{grid-column:2;margin-top:4px}
-body.inpos #top>#nt,body.inpos #top>#stats,body.inpos #top>#parts,body.inpos #top>#arow,body.inpos #top>#spk,body.inpos #top>#fvw,body.inpos #top>#str{grid-column:1/-1}
+body.inpos #top>#nt,body.inpos #top>#plan,body.inpos #top>#stats,body.inpos #top>#parts,body.inpos #top>#arow,body.inpos #top>#spk,body.inpos #top>#fvw,body.inpos #top>#str,body.inpos #top>#sigwhy,body.inpos #top>.znlab{grid-column:1/-1}
 }
 #parts{display:flex;gap:4px;margin-top:5px;font-size:11px}#parts span{flex:1;text-align:center;background:#141b23;border-radius:8px;padding:3px 0;white-space:nowrap;min-width:0}.ar{padding:8px 0;border-top:1px solid #1f2a37}.ar:first-of-type{border-top:0}.ah{display:flex;gap:14px;align-items:baseline;font-size:15px}.ah b{flex:1;font-size:14px}.at{margin-top:4px;font-weight:700;font-size:14px;color:#9aa4b2}.at.up{color:#2fd27a}.at.dn{color:#ff5b5b}
 #arow{display:flex;gap:10px;justify-content:flex-start;align-items:center;margin-top:4px;font-size:11px;white-space:nowrap;overflow:hidden;color:#8b98a5}#arow .ag{display:flex;gap:4px;align-items:center}#arow i{font-style:normal}#arow em{font-style:normal;font-weight:700;font-size:10px;padding:1px 5px;border-radius:6px;background:#1f2a37}#arow em.up{color:#2fd27a}#arow em.dn{color:#ff5b5b}#arow em.none{color:#f5c542}#arow em.na{color:#8b98a5}
 .at{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 10px}.at .as{font-size:14px;font-weight:800}.at.up .as{color:#2fd27a}.at.dn .as{color:#ff5b5b}.at.none .as{color:#f5c542}.at.none{color:#9aa4b2}
 #sigwhy{text-align:center;font-size:12px;margin:4px 0 0;min-height:16px}.znlab{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;font-size:13px;color:#8b98a5;-webkit-user-select:none;user-select:none}.znlab input{width:16px;height:16px}
+#plan{margin-top:8px;padding:10px 12px}
+#plan .phd{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+#plan .phd b{font-size:18px;font-weight:800}
+#plan .phd.BUY b{color:#4ade80}#plan .phd.SELL b{color:#ff8080}#plan .phd.WAIT b{color:#f5c542}
+#plan .ptime{font-size:18px;font-weight:700;letter-spacing:.5px}
+#plan .pmeta{font-size:11px;color:#8b98a5;margin:2px 0 6px}
+#plan .pgrp{padding:6px 0;border-top:1px solid #1f2a37}
+#plan .pgrp:first-of-type{border-top:0;padding-top:0}
+#plan .prow{display:flex;align-items:center;gap:8px;padding:3px 0}
+#plan .plab{flex:1;color:#8b98a5;font-size:13px}
+#plan .pval{font-weight:800;font-size:18px;font-variant-numeric:tabular-nums;letter-spacing:-.3px}
+#plan .prow.hero .pval{font-size:24px}
+#plan .pcopy{border:0;background:#24303c;color:#e6edf3;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+#plan .pcopy:active{filter:brightness(1.3)}
+#plan .plot,#plan .ptrig{font-size:12px;color:#8b98a5;margin-top:4px}
+#plan .ptrig{color:#e6edf3}
 </style></head><body>
 <div id="top"><h1>XAU/USD · Gold <span id="st" class="mu"></span></h1>
 <div id="pxrow"><div id="pxl"><p class="px"><span id="px">—</span> <span id="arr"></span></p><div id="chg" class="mu">loading…</div></div><canvas id="ch"></canvas></div>
 <div id="sig" class="badge WAIT">WAIT</div><div id="str" class="str"></div><div id="sigwhy" class="mu"></div><div id="spk" class="spike"></div>
 <div class="btns"><button class="bb" id="bB">BUY</button><button class="bs" id="bS">SELL</button><button class="bc" id="bC">CLOSE</button></div><label class="znlab"><input type="checkbox" id="znOn" checked> Use demand/supply in the signal</label>
 <div id="nt" class="mu"></div>
-<div id="stats"><div class="card"><div class="mu" title="Momentum (30s-weighted, 1-10 min)">Signal score</div><div id="m10">—</div></div><div class="card"><div class="mu">Stop (1.5×ATR14, 5m)</div><div id="atr">—</div></div><div class="card dh"><div class="mu">Day high / low</div><div id="hl">—</div></div></div><div id="parts"></div><div id="arow"></div></div>
+<div id="plan" class="card"></div>
+<div id="stats"><div class="card"><div class="mu" title="Momentum (30s-weighted, 1-10 min)">Signal score</div><div id="m10">—</div></div><div class="card"><div class="mu">TP1 distance (1.5×ATR14, 5m)</div><div id="atr">—</div></div><div class="card dh"><div class="mu">Day high / low</div><div id="hl">—</div></div></div><div id="parts"></div><div id="arow"></div></div>
 <div id="trade"><div id="tpx" class="tp"></div><div id="pos" style="display:none"></div><div id="rev" class="mu" style="text-align:center;font-size:18px;margin-top:8px"></div></div>
 <div class="card" style="margin-top:12px"><div class="mu">Key levels (Nov 19)</div><div id="lv"></div></div>
 <div class="card" id="arc" style="margin-top:12px;display:none"><div class="mu">Aroon (14) · trend check</div><div id="arl"></div><div class="mu" style="font-size:12px;margin-top:8px">Aroon confirms a trend that's already running, but it can't predict sudden spikes.</div></div>
@@ -94,8 +111,26 @@ function znBlocked(side,px,zones,atr,endI){var i,z,want=side==='BUY'?'SUPPLY':'D
 function znRange(z){return Math.round(z.lo)+'–'+Math.round(z.hi)}
 function znPack(b15){var c=(b15||[]).filter(function(b){return b&&!b.isOpen});if(c.length<16)return{zones:[],atr:null,atrNow:null,endI:-1,bars:c};var atr=swAtr(c,14),endI=c.length-1,zs=swZones(c,atr,1,endI);znMarkMitig(zs,c);return{zones:zs,atr:atr,atrNow:atr[endI],endI:endI,bars:c}}
 function znDecide(v1Side,px,pack,nowBar,nowTc,on){var atr,zs,endI,at,blk;if(!on)return{s:v1Side||'WAIT',why:'',zone:null,kind:'off'};if(v1Side!=='BUY'&&v1Side!=='SELL')return{s:'WAIT',why:'',zone:null,kind:'wait'};if(!pack||!pack.zones||pack.atrNow==null)return{s:'WAIT',why:'WAIT: need more 15m data for zones',zone:null,kind:'nodata'};atr=pack.atrNow;zs=pack.zones;endI=pack.endI==null?1e12:pack.endI;at=znAtOrReacting(v1Side,px,nowBar,zs,atr,nowTc,endI);if(!at)return{s:'WAIT',why:'WAIT: not at a fresh '+(v1Side==='BUY'?'demand':'supply')+' zone',zone:null,kind:'nozone'};blk=znBlocked(v1Side,px,zs,atr,endI);if(blk)return{s:'WAIT',why:'WAIT: '+(blk.k==='SUPPLY'?'supply ':'demand ')+znRange(blk)+' is within 1 ATR '+(v1Side==='BUY'?'above':'below'),zone:blk,kind:'block'};return{s:v1Side,why:v1Side+' at '+(at.k==='DEMAND'?'demand ':'supply ')+znRange(at),zone:at,kind:'ok'}}
+
+var PL_MS=120000,PL_SL=0.0005,PL_LIM_ATR=2,PL_LIM_FB=0.5;
+function plPhtHm(t){if(t==null||!isFinite(+t))return '';var ms=+t>1e12?+t:+t*1000,p=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Manila',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(ms)),hh='00',mm='00',i;for(i=0;i<p.length;i++){if(p[i].type==='hour')hh=p[i].value;if(p[i].type==='minute')mm=p[i].value}if(hh.length<2)hh='0'+hh;if(mm.length<2)mm='0'+mm;return hh+':'+mm}
+function plPhtTag(t){var h=plPhtHm(t);return h?h+' PHT':''}
+function plUpdatedText(t0,t1){return 'Updated '+plPhtTag(t0)+' · next '+plPhtHm(t1)}
+function plBucket(nowMs){return Math.floor(+nowMs/PL_MS)*PL_MS}
+function plNext(nowMs){return plBucket(nowMs)+PL_MS}
+function plShouldBuild(builtAt,nowMs){if(builtAt==null||!isFinite(+builtAt))return true;return plBucket(nowMs)!==plBucket(builtAt)}
+function plEntry(side,mid,bid,ask){if(side==='BUY')return (ask!=null&&isFinite(+ask))?+ask:+mid;if(side==='SELL')return (bid!=null&&isFinite(+bid))?+bid:+mid;return mid}
+function plSl(side,entry){var d=side==='BUY'?1:side==='SELL'?-1:0;return entry*(1-d*PL_SL)}
+function plSt(atr,mid){return (atr&&atr>0)?1.5*atr:((mid&&mid>0)?mid*0.003:null)}
+function plCopyText(x){return (+x).toFixed(2)}
+function plZoneOk(z,endI){if(!z)return false;if(!znLiveOne(z,endI==null?1e12:endI))return false;if(z.mitig_t!=null||(z.mitig_i!=null&&z.mitig_i!==undefined))return false;return true}
+function plLimit(side,entry,mid,atr,zones,endI){var a=(atr&&atr>0)?+atr:0,maxd=a*PL_LIM_ATR,fb=PL_LIM_FB*a,i,z,d,best=null,bd=1e15;for(i=0;i<(zones||[]).length;i++){z=zones[i];if(!plZoneOk(z,endI))continue;if(side==='BUY'){if(z.k!=='DEMAND'||!(z.hi<mid))continue;d=mid-z.hi;if(maxd&&d>maxd)continue;if(d<bd){bd=d;best=z.hi}}else{if(z.k!=='SUPPLY'||!(z.lo>mid))continue;d=z.lo-mid;if(maxd&&d>maxd)continue;if(d<bd){bd=d;best=z.lo}}}if(best!=null)return best;return side==='BUY'?entry-fb:entry+fb}
+function plTp(side,entry,atr,levels,zones,endI){var d=side==='BUY'?1:-1,st=plSt(atr,entry),tp1,tp2,def2,def3,cands,best=null,edge,i,z;if(!(st>0))return{tp1:null,tp2:null,tp3:null,st:null};tp1=entry+d*st;def2=entry+d*2*st;def3=entry+d*3*st;cands=(levels||[]).filter(function(v){return d>0?v>tp1:v<tp1}).sort(function(a,b){return d>0?a-b:b-a});tp2=cands.length?cands[0]:def2;if(d*(def3-tp2)<=0)def3=tp2+d*st;for(i=0;i<(zones||[]).length;i++){z=zones[i];if(!plZoneOk(z,endI))continue;if(side==='BUY'&&z.k==='SUPPLY')edge=z.lo;else if(side==='SELL'&&z.k==='DEMAND')edge=z.hi;else continue;if(d*(edge-tp2)>0&&d*(def3-edge)>0&&(best==null||d*(edge-best)<0))best=edge}return{tp1:tp1,tp2:tp2,tp3:best!=null?best:def3,st:st}}
+function plTriggers(mid,atr,zones,endI,filterOn){var out={buy:null,sell:null},a=(atr&&atr>0)?+atr:0,maxd=a*PL_LIM_ATR,i,z,d,bd=1e15,sd=1e15;if(!filterOn)return out;for(i=0;i<(zones||[]).length;i++){z=zones[i];if(!plZoneOk(z,endI))continue;d=znDist(mid,z);if(maxd&&d>maxd)continue;if(z.k==='DEMAND'&&z.lo<=mid&&d<bd){bd=d;out.buy=z}if(z.k==='SUPPLY'&&z.hi>=mid&&d<sd){sd=d;out.sell=z}}return out}
+function plBuild(opt){opt=opt||{};var now=opt.nowMs,t0=plBucket(now),t1=t0+PL_MS,side=opt.side,mid=opt.mid,atr=opt.atr,zones=opt.zones||[],endI=opt.endI,levels=opt.levels||[],tr,entry,sl,tp,limit,lot='0.01 lot split in thirds across TP1 / TP2 / TP3',base={s:side||'WAIT',t0:t0,t1:t1,time:plPhtHm(t0),updated:plUpdatedText(t0,t1),lot:lot,entry:null,sl:null,tp1:null,tp2:null,tp3:null,limit:null,triggers:plTriggers(mid,atr,zones,endI,!!opt.filterOn)};if(side!=='BUY'&&side!=='SELL'){base.s='WAIT';return base}entry=plEntry(side,mid,opt.bid,opt.ask);sl=plSl(side,entry);tp=plTp(side,entry,atr,levels,zones,endI);limit=plLimit(side,entry,mid,atr,zones,endI);base.entry=entry;base.sl=sl;base.tp1=tp.tp1;base.tp2=tp.tp2;base.tp3=tp.tp3;base.limit=limit;return base}
+function plHtml(p){var t,row;if(!p)return '';row=function(lab,val,hero){if(val==null||!isFinite(+val))return '';var n=plCopyText(val);return '<div class="prow'+(hero?' hero':'')+'"><span class="plab">'+lab+'</span><span class="pval">'+n+'</span><button type="button" class="pcopy" data-copy="'+n+'">Copy</button></div>'};t=['<div class="phd '+p.s+'"><b>'+(p.s==='WAIT'?'WAIT – no plan':p.s+' plan')+'</b><span class="ptime">'+(p.time||'')+'</span></div>','<div class="pmeta">'+(p.updated||'')+'</div>'];if(p.s==='WAIT'){if(p.triggers&&p.triggers.buy)t.push('<div class="ptrig">BUY if price is at demand '+znRange(p.triggers.buy)+'</div>');if(p.triggers&&p.triggers.sell)t.push('<div class="ptrig">SELL if price is at supply '+znRange(p.triggers.sell)+'</div>')}else{t.push('<div class="pgrp">'+row(p.s==='BUY'?'Buy at':'Sell at',p.entry,true)+row('Stop loss',p.sl)+'</div>');t.push('<div class="pgrp">'+row('TP1',p.tp1)+row('TP2',p.tp2)+row('TP3',p.tp3)+'</div>');t.push('<div class="pgrp">'+row(p.s==='BUY'?'Buy Limit at':'Sell Limit at',p.limit)+'</div>');if(p.lot)t.push('<div class="plot">'+p.lot+'</div>')}t.push('<div class="plot">Alerts only. Not financial advice.</div>');return t.join('')}
 /*ENDLOGIC*/
-var BASE=atob('aHR0cHM6Ly9iaXF1b3RlLmlv'),API=BASE+'/api/XAUUSD',LV=[['R2',3805],['R1',3780],['S1',3720],['S2',3650]],H=[],prev=null,atr=null,bars1=[],LS=0,SG={s:'WAIT',c:null,n:0},AR=null,bars15=[],ZPACK=null,form15=null,znUse=true;try{if(localStorage.gdZ1==='0')znUse=false;else if(localStorage.gdZ1==='1')znUse=true}catch(e){}
+var BASE=atob('aHR0cHM6Ly9iaXF1b3RlLmlv'),API=BASE+'/api/XAUUSD',LV=[['R2',3805],['R1',3780],['S1',3720],['S2',3650]],H=[],prev=null,atr=null,bars1=[],LS=0,SG={s:'WAIT',c:null,n:0},AR=null,bars15=[],ZPACK=null,form15=null,znUse=true,PLAN=null;try{if(localStorage.gdZ1==='0')znUse=false;else if(localStorage.gdZ1==='1')znUse=true}catch(e){}
 function $(i){return document.getElementById(i)}
 function f(x){return x.toFixed(2)}
 function at(ms){var t=Date.now()-ms,b=null;for(var i=0;i<H.length;i++){if(H[i][0]<=t)b=H[i];else break}return b}
@@ -128,7 +163,7 @@ async function tick(){try{var q=await j(API),m=q.mid,now=Date.now();H.push([now,
  $('chg').innerHTML='<span class="'+(q.dayDiffPercent>=0?'up':'dn')+'">'+(q.dayDiffPercent>=0?'+':'')+q.dayDiffPercent.toFixed(2)+'% today</span> · bid '+f(q.bid)+' / ask '+f(q.ask);
  $('st').textContent=q.stale||q.marketState!=='open'?'· '+(q.marketState||'stale'):'· live';
  $('hl').textContent=f(q.high)+' / '+f(q.low);
- var SS=sigScore(H,now,m);LS=SS.score;SG=sigStep(SG,LS,SIG_THR);var nowBar=form15?{open:form15.open,high:Math.max(form15.high,m),low:Math.min(form15.low,m),close:m,t:form15.t,tc:now/1000}:null;if(nowBar&&bars1.length){var lb=bars1[bars1.length-1];if(lb){nowBar.high=Math.max(nowBar.high,+lb.high||m);nowBar.low=Math.min(nowBar.low,+lb.low||m)}}var ZD=znDecide(SG.s,m,ZPACK,nowBar,now/1000,znUse),s=ZD.s;var yw=$('sigwhy');if(yw)yw.textContent=znUse?(ZD.why||''):'';
+ var SS=sigScore(H,now,m);LS=SS.score;SG=sigStep(SG,LS,SIG_THR);var nowBar=form15?{open:form15.open,high:Math.max(form15.high,m),low:Math.min(form15.low,m),close:m,t:form15.t,tc:now/1000}:null;if(nowBar&&bars1.length){var lb=bars1[bars1.length-1];if(lb){nowBar.high=Math.max(nowBar.high,+lb.high||m);nowBar.low=Math.min(nowBar.low,+lb.low||m)}}var ZD=znDecide(SG.s,m,ZPACK,nowBar,now/1000,znUse),s=ZD.s;var yw=$('sigwhy');if(yw)yw.textContent=znUse?(ZD.why||''):'';if(!PLAN||plShouldBuild(PLAN.t0,now)||(atr&&PLAN&&!PLAN._ready)){PLAN=plBuild({side:s,mid:m,bid:q.bid,ask:q.ask,atr:atr,levels:LV.map(function(l){return l[1]}),zones:ZPACK&&ZPACK.zones,endI:ZPACK&&ZPACK.endI,nowMs:now,filterOn:znUse});PLAN._ready=!!atr;var pe=$('plan');if(pe)pe.innerHTML=plHtml(PLAN)}
  $('sig').className='badge '+s;$('sig').textContent=s;var h1=bars1.length>60?(m/bars1[bars1.length-61].close-1)*100:null,tw=h1==null?0:(s=='BUY'?(h1>0?1:-1):(h1<0?1:-1));$('str').innerHTML=s=='WAIT'?'':(Math.abs(LS)>=2&&tw>0?'<span class="up">💪 STRONG</span>':'<span class="WAITc">〰 WEAK</span>')+(h1==null?'':' <span class="mu">· 1h '+(h1>=0?'+':'')+h1.toFixed(2)+'%</span>');$('m10').innerHTML='<span class="'+(LS>=0?'up':'dn')+'">'+(LS>=0?'+':'')+LS.toFixed(2)+'</span>';partsOut(SS.parts);
  var b2=at(120000),p2=b2?(m/b2[1]-1)*100:0,k=$('spk');
  if(Math.abs(p2)>=0.2){k.style.display='block';k.className='spike '+(p2>0?'BUY':'SELL');k.textContent=(p2>0?'▲ SPIKE UP ':'▼ SPIKE DOWN ')+p2.toFixed(2)+'% / 2 min'}else k.style.display='none';var A=$('arr');if(Math.abs(p2)>=0.2){A.textContent=p2>0?'▲':'▼';A.className=p2>0?'arr-up':'arr-dn'}else{A.textContent='';A.className=''}
@@ -150,5 +185,5 @@ function pos(){var b=$('pos'),t=$('tpx'),R=$('rev');document.body.classList.togg
  b.innerHTML=E.map(function(x,i){var d=x.d,tp1=x.p+d*st,lv=LV.map(function(l){return l[1]}).filter(function(v){return d>0?v>tp1:v<tp1}).sort(function(a,c){return d>0?a-c:c-a}),tp2=lv.length?lv[0]:x.p+d*2*st,sl=x.p*(1-d*0.0005),pt=(m-x.p)*d,
   w='',wc='mu';if(d*(m-sl)<=0){w='⛔ STOP LOSS';wc='dn'}else if(d*(m-tp2)>=0){w='✅ TAKE ALL (TP2)';wc='up'}else if(d*(m-tp1)>=0){w='💰 TAKE PROFIT (TP1)';wc='up'}else if(d*LS<=-SIG_THR){w='↘ AGAINST YOU';wc='dn'}else if(pt>0&&((d>0&&$('sig').textContent==='SELL')||(d<0&&$('sig').textContent==='BUY'))){w='⚠ SECURE PROFIT';wc='WAITc'}else if(d*LS>=SIG_THR){w='↗ YOUR WAY';wc='up'}else w='→ Flat';
   return '<div class="ent"><div class="el"><b class="'+(d>0?'up':'dn')+'">'+(d>0?'BUY':'SELL')+' #'+(i+1)+'</b> @ '+f(x.p)+'<div class="mu">TP1 '+f(tp1)+' · TP2 '+f(tp2)+' · SL '+f(sl)+'</div></div><div class="ew '+wc+(w.charAt(0)==='→'?'':' bl')+'">'+w+'</div><div class="en '+(pt>=0?'up':'dn')+'">'+(pt>=0?'+':'')+f(pt)+'<div class="mu">'+(pt>=0?'+':'')+(pt/x.p*100).toFixed(3)+'%</div></div><button class="ex" data-x="'+i+'">✕</button></div>'}).join('')}
-(function(){var el=$('znOn');if(!el)return;el.checked=znUse;el.addEventListener('change',function(){znUse=!!el.checked;try{localStorage.gdZ1=znUse?'1':'0'}catch(e){}tick()})})();aroonRowOut();candles().then(tick);aroonLoad();setInterval(tick,1500);setInterval(candles,60000);setInterval(aroonLoad,15000);
+(function(){var p=$('plan');if(p)p.addEventListener('click',function(e){var b=e.target.closest('[data-copy]');if(!b)return;var t=b.getAttribute('data-copy');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){note('Copied '+t)}).catch(function(){note('Copy failed')})}else note('Copy failed')});})();(function(){var el=$('znOn');if(!el)return;el.checked=znUse;el.addEventListener('change',function(){znUse=!!el.checked;try{localStorage.gdZ1=znUse?'1':'0'}catch(e){}PLAN=null;tick()})})();aroonRowOut();candles().then(tick);aroonLoad();setInterval(tick,1500);setInterval(candles,60000);setInterval(aroonLoad,15000);
 </script></body></html>
